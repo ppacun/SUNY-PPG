@@ -14,7 +14,7 @@ struct ID_PPGApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

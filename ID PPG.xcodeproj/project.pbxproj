@@ -8,11 +8,18 @@
 
 /* Begin PBXBuildFile section */
 		07CF7B11305869D9007EF444 /* ID_PPGApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B01305869D9007EF444 /* ID_PPGApp.swift */; };
-		07CF7B12305869D9007EF444 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B02305869D9007EF444 /* ContentView.swift */; };
 		07CF7B13305869D9007EF444 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B03305869D9007EF444 /* Persistence.swift */; };
 		07CF7B14305869D9007EF444 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07CF7B04305869D9007EF444 /* Assets.xcassets */; };
 		07CF7B16305869D9007EF444 /* ID_PPG.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B06305869D9007EF444 /* ID_PPG.xcdatamodeld */; };
 		07CF7B19305869D9007EF444 /* ID_PPGTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B09305869D9007EF444 /* ID_PPGTests.swift */; };
+		A19A4B65306C31CA006F443A /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B64306C31B8006F443A /* CameraView.swift */; };
+		A19A4B67306C345D006F443A /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B66306C3447006F443A /* CameraManager.swift */; };
+		A19A4B69306C37B3006F443A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B68306C37A9006F443A /* HomeView.swift */; };
+		A19A4B6B306D94B3006F443A /* PastReadingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B6A306D949C006F443A /* PastReadingsView.swift */; };
+		A19A4B6D306D94D5006F443A /* HealthRecommendationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B6C306D94C4006F443A /* HealthRecommendationsView.swift */; };
+		A19A4B6F306D94E8006F443A /* AboutUsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B6E306D94E2006F443A /* AboutUsView.swift */; };
+		A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B70306D94F1006F443A /* HowItWorksView.swift */; };
+		A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B72306DA9FB006F443A /* ReadingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,12 +36,19 @@
 		07CF7AAD305869D7007EF444 /* ID PPG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ID PPG.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		07CF7AC1305869D9007EF444 /* ID PPGTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ID PPGTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		07CF7B01305869D9007EF444 /* ID_PPGApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ID_PPGApp.swift; sourceTree = "<group>"; };
-		07CF7B02305869D9007EF444 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		07CF7B03305869D9007EF444 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		07CF7B04305869D9007EF444 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07CF7B05305869D9007EF444 /* ID_PPG.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ID_PPG.xcdatamodel; sourceTree = "<group>"; };
 		07CF7B08305869D9007EF444 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		07CF7B09305869D9007EF444 /* ID_PPGTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ID_PPGTests.swift; sourceTree = "<group>"; };
+		A19A4B64306C31B8006F443A /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		A19A4B66306C3447006F443A /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		A19A4B68306C37A9006F443A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A19A4B6A306D949C006F443A /* PastReadingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastReadingsView.swift; sourceTree = "<group>"; };
+		A19A4B6C306D94C4006F443A /* HealthRecommendationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecommendationsView.swift; sourceTree = "<group>"; };
+		A19A4B6E306D94E2006F443A /* AboutUsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutUsView.swift; sourceTree = "<group>"; };
+		A19A4B70306D94F1006F443A /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
+		A19A4B72306DA9FB006F443A /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +90,15 @@
 		07CF7AAF305869D7007EF444 /* ID PPG */ = {
 			isa = PBXGroup;
 			children = (
+				A19A4B70306D94F1006F443A /* HowItWorksView.swift */,
+				A19A4B6E306D94E2006F443A /* AboutUsView.swift */,
+				A19A4B6C306D94C4006F443A /* HealthRecommendationsView.swift */,
+				A19A4B6A306D949C006F443A /* PastReadingsView.swift */,
+				A19A4B68306C37A9006F443A /* HomeView.swift */,
+				A19A4B66306C3447006F443A /* CameraManager.swift */,
+				A19A4B64306C31B8006F443A /* CameraView.swift */,
+				A19A4B72306DA9FB006F443A /* ReadingView.swift */,
 				07CF7B01305869D9007EF444 /* ID_PPGApp.swift */,
-				07CF7B02305869D9007EF444 /* ContentView.swift */,
 				07CF7B03305869D9007EF444 /* Persistence.swift */,
 				07CF7B04305869D9007EF444 /* Assets.xcassets */,
 				07CF7B06305869D9007EF444 /* ID_PPG.xcdatamodeld */,
@@ -194,8 +215,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				07CF7B16305869D9007EF444 /* ID_PPG.xcdatamodeld in Sources */,
-				07CF7B12305869D9007EF444 /* ContentView.swift in Sources */,
+				A19A4B6B306D94B3006F443A /* PastReadingsView.swift in Sources */,
+				A19A4B69306C37B3006F443A /* HomeView.swift in Sources */,
 				07CF7B11305869D9007EF444 /* ID_PPGApp.swift in Sources */,
+				A19A4B65306C31CA006F443A /* CameraView.swift in Sources */,
+				A19A4B6F306D94E8006F443A /* AboutUsView.swift in Sources */,
+				A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */,
+				A19A4B6D306D94D5006F443A /* HealthRecommendationsView.swift in Sources */,
+				A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */,
+				A19A4B67306C345D006F443A /* CameraManager.swift in Sources */,
 				07CF7B13305869D9007EF444 /* Persistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -232,12 +260,13 @@
 				INFOPLIST_FILE = "ID PPG/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "SUNY PPG";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to capture PPG video.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -264,12 +293,13 @@
 				INFOPLIST_FILE = "ID PPG/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "SUNY PPG";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to capture PPG video.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
