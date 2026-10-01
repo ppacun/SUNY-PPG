@@ -5,12 +5,12 @@ import SwiftUI
 struct ReadingView: View {
 
     @StateObject private var camera = CameraManager()
-    let minRVal = 170
+    let minRVal = 190
    
     var body: some View {
 
         VStack(spacing: 20) { //left is top Right is bottom, top is left, +90 deg
-            let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = (camera.leftRed > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed > minRVal)
+            let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = ((camera.leftRed + 10) > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed > minRVal)
             if  CVR && LVR && TVR && RVR && BVR{
                 VStack(spacing: 10) {
                     Image(systemName: "heart.fill")
@@ -23,47 +23,91 @@ struct ReadingView: View {
                 }
 
             }else if (CVR && TVR && LVR && RVR){
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Down")
                     .font(.largeTitle)
                     .bold()
             }else if (CVR && BVR && LVR && RVR){
-                Text("Move Finger Down")
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
+                Text("Move Finger Up")
                     .font(.largeTitle)
                     .bold()
             }else if(TVR && RVR){
-                Text("Move Finger Down and Left")
-                    .font(.largeTitle)
-                    .bold()
-            }else if(TVR && LVR){
+                Image(systemName: "arrow.down.right")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Down and Right")
                     .font(.largeTitle)
                     .bold()
-            }else if(BVR && RVR){
-                Text("Move Finger Up and Left")
+            }else if(TVR && LVR){
+                Image(systemName: "arrow.down.left")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
+                Text("Move Finger Down and Left")
                     .font(.largeTitle)
                     .bold()
-            }else if(BVR && LVR){
+            }else if(BVR && RVR){
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Up and Right")
                     .font(.largeTitle)
                     .bold()
+            }else if(BVR && LVR){
+                Image(systemName: "arrow.up.left")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
+                Text("Move Finger Up and left")
+                    .font(.largeTitle)
+                    .bold()
             }else if(CVR){
+                Image(systemName: "record.circle")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Closer")
                     .font(.largeTitle)
                     .bold()
             }else if(TVR){
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Down")
                     .font(.largeTitle)
                     .bold()
             }else if(BVR){// says left
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
                 Text("Move Finger Up")
                     .font(.largeTitle)
                     .bold()
             }else if(LVR){//says UP
-                Text("Move Finger Right")
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
+                Text("Move Finger left")
                     .font(.largeTitle)
                     .bold()
             }else if(RVR){
-                Text("Move Finger Left")
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.black)
+                
+                Text("Move Finger Right")
                     .font(.largeTitle)
                     .bold()
             }
