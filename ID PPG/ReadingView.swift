@@ -5,13 +5,19 @@ import SwiftUI
 struct ReadingView: View {
 
     @StateObject private var camera = CameraManager()
-    let minRVal = 190
+    let minRVal = 170
+    let maxBVal = 40
+    let maxGVal = 100
    
     var body: some View {
 
         VStack(spacing: 20) { //left is top Right is bottom, top is left, +90 deg
-            let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = ((camera.leftRed + 10) > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed > minRVal)
-            if  CVR && LVR && TVR && RVR && BVR{
+            let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = (camera.leftRed  > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed + 10 > minRVal)
+            let LVB = (camera.topBlue < maxBVal), RVB = (camera.bottomBlue < maxBVal), TVB = (camera.leftBlue < maxBVal), CVB = (camera.centerBlue < maxBVal), BVB = (camera.rightBlue < maxBVal)
+            let LVG = (camera.topGreen < maxGVal), RVG = (camera.bottomGreen < maxGVal), TVG = (camera.leftGreen < maxGVal), CVG = (camera.centerGreen < maxGVal), BVG = (camera.rightGreen < maxGVal)
+            let LF = LVR && LVB && LVG, RF = RVR && RVB && RVG, CF = CVR && CVB && CVG, TF = TVR && TVG && TVB, BF = BVR && BVB && BVG
+           
+            if  (CF && BF && TF && RF && LF){
                 VStack(spacing: 10) {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 70))
@@ -22,90 +28,90 @@ struct ReadingView: View {
                         .bold()
                 }
 
-            }else if (CVR && TVR && LVR && RVR){
+            }else if (CF && TF && LF && RF){
                 Image(systemName: "arrow.down")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Down")
                     .font(.largeTitle)
                     .bold()
-            }else if (CVR && BVR && LVR && RVR){
+            }else if (CF && BF && LF && RF){
                 Image(systemName: "arrow.up")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Up")
                     .font(.largeTitle)
                     .bold()
-            }else if(TVR && RVR){
+            }else if(TF && RF){
                 Image(systemName: "arrow.down.right")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Down and Right")
                     .font(.largeTitle)
                     .bold()
-            }else if(TVR && LVR){
+            }else if(TF && LF){
                 Image(systemName: "arrow.down.left")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Down and Left")
                     .font(.largeTitle)
                     .bold()
-            }else if(BVR && RVR){
+            }else if(BF && RF){
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Up and Right")
                     .font(.largeTitle)
                     .bold()
-            }else if(BVR && LVR){
+            }else if(BF && LF){
                 Image(systemName: "arrow.up.left")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Up and left")
                     .font(.largeTitle)
                     .bold()
-            }else if(CVR){
+            }else if(CF){
                 Image(systemName: "record.circle")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Closer")
                     .font(.largeTitle)
                     .bold()
-            }else if(TVR){
+            }else if(TF){
                 Image(systemName: "arrow.down")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Down")
                     .font(.largeTitle)
                     .bold()
-            }else if(BVR){// says left
+            }else if(BF){
                 Image(systemName: "arrow.up")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Up")
                     .font(.largeTitle)
                     .bold()
-            }else if(LVR){//says UP
+            }else if(LF){
                 Image(systemName: "arrow.left")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger left")
                     .font(.largeTitle)
                     .bold()
-            }else if(RVR){
+            }else if(RF){
                 Image(systemName: "arrow.right")
                     .font(.system(size: 70))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.gray)
                 
                 Text("Move Finger Right")
                     .font(.largeTitle)
@@ -132,8 +138,13 @@ struct ReadingView: View {
                 .onDisappear {
                     camera.turnFlashlightOff()
                 }
-
-            Text("RGB(\(camera.centerRed), \(camera.centerGreen), \(camera.centerBlue))")
+            Text("TOP RGB(\(camera.leftRed), \(camera.leftGreen), \(camera.leftBlue))")
+                .font(.title3)
+                .fontWeight(.bold)
+            Text("left RGB(\(camera.topRed), \(camera.topGreen), \(camera.topBlue))" + "Center RGB(\(camera.centerRed), \(camera.centerGreen), \(camera.centerBlue))" + "right RGB(\(camera.bottomRed), \(camera.bottomGreen), \(camera.bottomBlue))")
+                .font(.system(size: 10))
+                .fontWeight(.bold)
+            Text("Bottom RGB(\(camera.rightRed), \(camera.rightGreen), \(camera.rightBlue))")
                 .font(.title3)
                 .fontWeight(.bold)
 
