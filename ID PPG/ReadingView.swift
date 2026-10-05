@@ -16,7 +16,7 @@ struct ReadingView: View {
             let LVB = (camera.topBlue < maxBVal), RVB = (camera.bottomBlue < maxBVal), TVB = (camera.leftBlue < maxBVal), CVB = (camera.centerBlue < maxBVal), BVB = (camera.rightBlue < maxBVal)
             let LVG = (camera.topGreen < maxGVal), RVG = (camera.bottomGreen < maxGVal), TVG = (camera.leftGreen < maxGVal), CVG = (camera.centerGreen < maxGVal), BVG = (camera.rightGreen < maxGVal)
             let LF = LVR && LVB && LVG, RF = RVR && RVB && RVG, CF = CVR && CVB && CVG, TF = TVR && TVG && TVB, BF = BVR && BVB && BVG
-           
+        
             if  (CF && BF && TF && RF && LF){
                 VStack(spacing: 10) {
                     Image(systemName: "heart.fill")
