@@ -12,6 +12,7 @@
 		07CF7B14305869D9007EF444 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07CF7B04305869D9007EF444 /* Assets.xcassets */; };
 		07CF7B16305869D9007EF444 /* ID_PPG.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B06305869D9007EF444 /* ID_PPG.xcdatamodeld */; };
 		07CF7B19305869D9007EF444 /* ID_PPGTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CF7B09305869D9007EF444 /* ID_PPGTests.swift */; };
+		377662453076ED3700EA8CED /* LiveReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377662443076ED3700EA8CED /* LiveReadingView.swift */; };
 		A19A4B65306C31CA006F443A /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B64306C31B8006F443A /* CameraView.swift */; };
 		A19A4B67306C345D006F443A /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B66306C3447006F443A /* CameraManager.swift */; };
 		A19A4B69306C37B3006F443A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B68306C37A9006F443A /* HomeView.swift */; };
@@ -41,6 +42,7 @@
 		07CF7B05305869D9007EF444 /* ID_PPG.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ID_PPG.xcdatamodel; sourceTree = "<group>"; };
 		07CF7B08305869D9007EF444 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		07CF7B09305869D9007EF444 /* ID_PPGTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ID_PPGTests.swift; sourceTree = "<group>"; };
+		377662443076ED3700EA8CED /* LiveReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveReadingView.swift; sourceTree = "<group>"; };
 		A19A4B64306C31B8006F443A /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		A19A4B66306C3447006F443A /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		A19A4B68306C37A9006F443A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				07CF7B04305869D9007EF444 /* Assets.xcassets */,
 				07CF7B06305869D9007EF444 /* ID_PPG.xcdatamodeld */,
 				07CF7B08305869D9007EF444 /* Info.plist */,
+				377662443076ED3700EA8CED /* LiveReadingView.swift */,
 			);
 			path = "ID PPG";
 			sourceTree = "<group>";
@@ -221,6 +224,7 @@
 				A19A4B65306C31CA006F443A /* CameraView.swift in Sources */,
 				A19A4B6F306D94E8006F443A /* AboutUsView.swift in Sources */,
 				A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */,
+				377662453076ED3700EA8CED /* LiveReadingView.swift in Sources */,
 				A19A4B6D306D94D5006F443A /* HealthRecommendationsView.swift in Sources */,
 				A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */,
 				A19A4B67306C345D006F443A /* CameraManager.swift in Sources */,

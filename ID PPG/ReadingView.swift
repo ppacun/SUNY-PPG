@@ -8,8 +8,25 @@ struct ReadingView: View {
     let minRVal = 170
     let maxBVal = 40
     let maxGVal = 100
+    @State private var showLive = false
    
     var body: some View {
+        ZStack {
+            if showLive {
+                LiveReadingView(camera: camera)
+            } else {
+                guidanceView
+            }
+        }
+        .onAppear {
+            camera.turnFlashlightOn()
+        }
+        .onDisappear {
+            camera.turnFlashlightOff()
+        }
+    }
+
+    private var guidanceView: some View {
 
         VStack(spacing: 20) { //left is top Right is bottom, top is left, +90 deg
             let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = (camera.leftRed  > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed + 10 > minRVal)
@@ -17,7 +34,7 @@ struct ReadingView: View {
             let LVG = (camera.topGreen < maxGVal), RVG = (camera.bottomGreen < maxGVal), TVG = (camera.leftGreen < maxGVal), CVG = (camera.centerGreen < maxGVal), BVG = (camera.rightGreen < maxGVal)
             let LF = LVR && LVB && LVG, RF = RVR && RVB && RVG, CF = CVR && CVB && CVG, TF = TVR && TVG && TVB, BF = BVR && BVB && BVG
         
-            if  (CF && BF && TF && RF && LF){
+            if  (CF && BF && TF && RF && LF) {
                 VStack(spacing: 10) {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 70))
@@ -26,6 +43,9 @@ struct ReadingView: View {
                     Text("Finger Detected")
                         .font(.largeTitle)
                         .bold()
+                }
+                .onAppear {
+                    showLive = true
                 }
 
             }else if (CF && TF && LF && RF){
@@ -132,12 +152,6 @@ struct ReadingView: View {
                     Circle()
                         .stroke(Color.gray, lineWidth: 4)
                 )
-                .onAppear {
-                    camera.turnFlashlightOn()
-                }
-                .onDisappear {
-                    camera.turnFlashlightOff()
-                }
             Text("TOP RGB(\(camera.leftRed), \(camera.leftGreen), \(camera.leftBlue))")
                 .font(.title3)
                 .fontWeight(.bold)
@@ -160,3 +174,5 @@ struct ContentView_Previews: PreviewProvider {
         ReadingView()
     }
 }
+
+
