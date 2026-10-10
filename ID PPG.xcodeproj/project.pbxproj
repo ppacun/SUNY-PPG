@@ -20,6 +20,8 @@
 		A19A4B6F306D94E8006F443A /* AboutUsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B6E306D94E2006F443A /* AboutUsView.swift */; };
 		A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B70306D94F1006F443A /* HowItWorksView.swift */; };
 		A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B72306DA9FB006F443A /* ReadingView.swift */; };
+		BA55BF003079B15D0005FF58 /* PulseSignalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */; };
+		BA55BF023079E92E0005FF58 /* PPG_Testing1RGB.csv in Resources */ = {isa = PBXBuildFile; fileRef = BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,8 @@
 		A19A4B6E306D94E2006F443A /* AboutUsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutUsView.swift; sourceTree = "<group>"; };
 		A19A4B70306D94F1006F443A /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
 		A19A4B72306DA9FB006F443A /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
+		BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseSignalProcess.swift; sourceTree = "<group>"; };
+		BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = PPG_Testing1RGB.csv; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +94,7 @@
 		07CF7AAF305869D7007EF444 /* ID PPG */ = {
 			isa = PBXGroup;
 			children = (
+				BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */,
 				A19A4B70306D94F1006F443A /* HowItWorksView.swift */,
 				A19A4B6E306D94E2006F443A /* AboutUsView.swift */,
 				A19A4B6C306D94C4006F443A /* HealthRecommendationsView.swift */,
@@ -111,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				07CF7B09305869D9007EF444 /* ID_PPGTests.swift */,
+				BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */,
 			);
 			path = "ID PPGTests";
 			sourceTree = "<group>";
@@ -204,6 +210,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA55BF023079E92E0005FF58 /* PPG_Testing1RGB.csv in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,6 +222,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				07CF7B16305869D9007EF444 /* ID_PPG.xcdatamodeld in Sources */,
+				BA55BF003079B15D0005FF58 /* PulseSignalProcess.swift in Sources */,
 				A19A4B6B306D94B3006F443A /* PastReadingsView.swift in Sources */,
 				A19A4B69306C37B3006F443A /* HomeView.swift in Sources */,
 				07CF7B11305869D9007EF444 /* ID_PPGApp.swift in Sources */,
