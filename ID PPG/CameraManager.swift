@@ -3,9 +3,14 @@ import AVFoundation
 class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let CFPS = 30
     let session = AVCaptureSession()
-
+    
     private var cameraDevice: AVCaptureDevice?
-
+    private var isRecording = false
+    private var csvURL: URL?
+    @Published var lastCSVURL: URL?
+    @Published var avgRed: Int = 0
+    @Published var avgGreen: Int = 0
+    @Published var avgBlue: Int = 0
     @Published var centerRed: Int = 0
     @Published var centerGreen: Int = 0
     @Published var centerBlue: Int = 0
@@ -26,10 +31,78 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         super.init()
         setupCamera()
     }
+    private func saveReading(
+        avgRed: Int,
+        avgGreen: Int,
+        avgBlue: Int
+    ) {
+        guard isRecording,
+              let url = csvURL else {
+            return
+        }
 
+        let timestamp = Date().timeIntervalSince1970
+
+        let row = "\(timestamp),\(avgRed),\(avgGreen),\(avgBlue)\n"
+
+        guard let data = row.data(using: .utf8) else {
+            return
+        }
+
+        do {
+            let fileHandle = try FileHandle(forWritingTo: url)
+
+            fileHandle.seekToEndOfFile()
+            fileHandle.write(data)
+
+            try fileHandle.close()
+
+        } catch {
+            print("Could not write CSV:", error)
+        }
+    }
+    func startRecording() {
+        let documents = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        )[0]
+
+        let fileName = "PPG_\(Int(Date().timeIntervalSince1970)).csv"
+        let url = documents.appendingPathComponent(fileName)
+
+        csvURL = url
+        lastCSVURL = url
+
+        let header = "timestamp,avgRed,avgGreen,avgBlue\n"
+
+        do {
+            try header.write(
+                to: url,
+                atomically: true,
+                encoding: .utf8
+            )
+
+            isRecording = true
+
+            print("Recording started:")
+            print(url)
+
+        } catch {
+            print("Could not create CSV:", error)
+        }
+    }
+
+    func stopRecording() {
+        isRecording = false
+
+        if let url = csvURL {
+            print("Recording stopped:")
+            print(url)
+        }
+    }
     private func setupCamera() {
         session.beginConfiguration()
-
+        session.sessionPreset = .low
         guard let camera = AVCaptureDevice.default(
             .builtInWideAngleCamera,
             for: .video,
@@ -172,12 +245,39 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         let bottomBlueValue = buffer[bottomPixelIndex]
         let bottomGreenValue = buffer[bottomPixelIndex + 1]
         let bottomRedValue = buffer[bottomPixelIndex + 2]
+        let avgR = (
+            Int(centerRedValue) +
+            Int(leftRedValue) +
+            Int(rightRedValue) +
+            Int(topRedValue) +
+            Int(bottomRedValue)
+        ) / 5
+
+        let avgG = (
+            Int(centerGreenValue) +
+            Int(leftGreenValue) +
+            Int(rightGreenValue) +
+            Int(topGreenValue) +
+            Int(bottomGreenValue)
+        ) / 5
+
+        let avgB = (
+            Int(centerBlueValue) +
+            Int(leftBlueValue) +
+            Int(rightBlueValue) +
+            Int(topBlueValue) +
+            Int(bottomBlueValue)
+        ) / 5
 
         CVPixelBufferUnlockBaseAddress(
             pixelBuffer,
             .readOnly
         )
-
+        saveReading(
+            avgRed: avgR,
+            avgGreen: avgG,
+            avgBlue: avgB
+        )
         DispatchQueue.main.async {
             self.centerRed = Int(centerRedValue)
             self.centerGreen = Int(centerGreenValue)
@@ -194,6 +294,9 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             self.topRed = Int(topRedValue)
             self.topGreen = Int(topGreenValue)
             self.topBlue = Int(topBlueValue)
+            self.avgRed = avgR
+            self.avgGreen = avgG
+            self.avgBlue = avgB
         }
     }
 
@@ -206,7 +309,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         do {
             try device.lockForConfiguration()
 
-            try device.setTorchModeOn(level: 1.0)
+            try device.setTorchModeOn(level: 0.25)
 
             device.unlockForConfiguration()
 
