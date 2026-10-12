@@ -150,7 +150,30 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             print("Could not create CSV:", error)
         }
     }
+    func lockCameraSettings() {
+        guard let device = cameraDevice else { return }
 
+        do {
+            try device.lockForConfiguration()
+
+            if device.isExposureModeSupported(.locked) {
+                device.exposureMode = .locked
+            }
+
+            if device.isWhiteBalanceModeSupported(.locked) {
+                device.whiteBalanceMode = .locked
+            }
+
+            if device.isFocusModeSupported(.locked) {
+                device.focusMode = .locked
+            }
+
+            device.unlockForConfiguration()
+
+        } catch {
+            print("Could not lock camera settings:", error)
+        }
+    }
     func stopRecording() {
         isRecording = false
 

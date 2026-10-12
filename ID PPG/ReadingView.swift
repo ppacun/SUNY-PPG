@@ -20,7 +20,7 @@ struct ReadingView: View {
     let readingDuration: TimeInterval = 60
 
     var body: some View {
-
+        
         VStack(spacing: 20) { //left is top Right is bottom, top is left, +90 deg
             let LVR = (camera.topRed > minRVal), RVR = (camera.bottomRed > minRVal), TVR = (camera.leftRed  > minRVal), CVR = (camera.centerRed > minRVal), BVR = (camera.rightRed + 10 > minRVal)
             let LVB = (camera.topBlue < maxBVal), RVB = (camera.bottomBlue < maxBVal), TVB = (camera.leftBlue < maxBVal), CVB = (camera.centerBlue < maxBVal), BVB = (camera.rightBlue < maxBVal)
@@ -200,6 +200,7 @@ struct ReadingView: View {
                     let detected = CF && BF && TF && RF && LF
                     //added this for a less sensitive reading
                     if detected {
+                        
                         lastFingerDetectedTime = Date()
                     }
 
@@ -217,7 +218,7 @@ struct ReadingView: View {
                             readingStoppedEarly = false
                             startTime = Date()
                             secondsRemaining = 60
-
+                            camera.lockCameraSettings()
                             camera.startRecording()
                         }
 
