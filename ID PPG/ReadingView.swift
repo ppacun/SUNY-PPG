@@ -8,14 +8,15 @@ struct ReadingView: View {
     
     @State private var showResults = false
     @StateObject private var camera = CameraManager()
-    let minRVal = 170
-    let maxBVal = 40
-    let maxGVal = 100
+    let minRVal = 140
+    let maxBVal = 70
+    let maxGVal = 130
     @State private var isReading = false
     @State private var readingStoppedEarly = false
     @State private var startTime: Date?
     @State private var secondsRemaining = 60
     @State private var readingComplete = false
+    @State private var lastFingerDetectedTime: Date?
     let readingDuration: TimeInterval = 60
 
     var body: some View {
@@ -26,6 +27,8 @@ struct ReadingView: View {
             let LVG = (camera.topGreen < maxGVal), RVG = (camera.bottomGreen < maxGVal), TVG = (camera.leftGreen < maxGVal), CVG = (camera.centerGreen < maxGVal), BVG = (camera.rightGreen < maxGVal)
             let LF = LVR && LVB && LVG, RF = RVR && RVB && RVG, CF = CVR && CVB && CVG, TF = TVR && TVG && TVB, BF = BVR && BVB && BVG
             let fingerDetected = CF && BF && TF && RF && LF
+            
+            
             if fingerDetected {
 
                 VStack(spacing: 10) {
@@ -36,6 +39,20 @@ struct ReadingView: View {
                     Text("Finger Detected")
                         .font(.largeTitle)
                         .bold()
+                    //im adding the integration code here- yaren
+                    
+                    // Track B: Display calculated heart rate
+                    if let bpm = camera.estimatedBPM {
+                        Text("\(Int(bpm.rounded())) BPM")
+                            .font(.system(size: 45))
+                            .bold()
+                            .foregroundStyle(.red)
+                    } else {
+                        Text("Calculating heart rate...")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                    }
+                    //end of added code
 
                     if isReading {
                         Text("Please leave finger for \(secondsRemaining) seconds")
@@ -181,8 +198,19 @@ struct ReadingView: View {
                     let BF = BVR && BVB && BVG
 
                     let detected = CF && BF && TF && RF && LF
-
+                    //added this for a less sensitive reading
                     if detected {
+                        lastFingerDetectedTime = Date()
+                    }
+
+                    let fingerStillPresent = detected ||
+                        (lastFingerDetectedTime.map {
+                            Date().timeIntervalSince($0) < 0.5
+                        } ?? false)
+                    //end of addition
+
+
+                    if fingerStillPresent {
 
                         if !isReading && !readingComplete {
                             isReading = true

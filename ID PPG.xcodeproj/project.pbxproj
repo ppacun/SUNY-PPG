@@ -21,6 +21,7 @@
 		A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B70306D94F1006F443A /* HowItWorksView.swift */; };
 		A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B72306DA9FB006F443A /* ReadingView.swift */; };
 		A1F2BEC83079EFE800DF3DC5 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */; };
+		BA55BF04307C49CA0005FF58 /* PulseSignalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55BF03307C49CA0005FF58 /* PulseSignalProcess.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,7 @@
 		A19A4B70306D94F1006F443A /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
 		A19A4B72306DA9FB006F443A /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
 		A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
+		BA55BF03307C49CA0005FF58 /* PulseSignalProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseSignalProcess.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +94,7 @@
 		07CF7AAF305869D7007EF444 /* ID PPG */ = {
 			isa = PBXGroup;
 			children = (
+				BA55BF03307C49CA0005FF58 /* PulseSignalProcess.swift */,
 				A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */,
 				A19A4B70306D94F1006F443A /* HowItWorksView.swift */,
 				A19A4B6E306D94E2006F443A /* AboutUsView.swift */,
@@ -228,6 +231,7 @@
 				A19A4B6D306D94D5006F443A /* HealthRecommendationsView.swift in Sources */,
 				A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */,
 				A19A4B67306C345D006F443A /* CameraManager.swift in Sources */,
+				BA55BF04307C49CA0005FF58 /* PulseSignalProcess.swift in Sources */,
 				07CF7B13305869D9007EF444 /* Persistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
