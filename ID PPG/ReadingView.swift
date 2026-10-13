@@ -4,10 +4,10 @@ import SwiftUI
 
 struct ReadingView: View {
     
-    
-    
     @State private var showResults = false
     @StateObject private var camera = CameraManager()
+    @StateObject private var heartbeatWave = HeartbeatWave()
+    @State private var bpmValuesThisReading: [Double] = []
     let minRVal = 140
     let maxBVal = 70
     let maxGVal = 130
@@ -18,6 +18,14 @@ struct ReadingView: View {
     @State private var readingComplete = false
     @State private var lastFingerDetectedTime: Date?
     let readingDuration: TimeInterval = 60
+
+    // Average of the BPM values received during this reading (nil if there were none).
+    private var averageBPM: Double? {
+        if bpmValuesThisReading.isEmpty {
+            return nil
+        }
+        return bpmValuesThisReading.reduce(0, +) / Double(bpmValuesThisReading.count)
+    }
 
     var body: some View {
 
@@ -30,37 +38,28 @@ struct ReadingView: View {
             
             
             if fingerDetected {
-
+                
                 VStack(spacing: 10) {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 70))
                         .foregroundStyle(.red)
-
+                    
                     Text("Finger Detected")
                         .font(.largeTitle)
                         .bold()
-                    //im adding the integration code here- yaren
+                   
                     
-                    // Track B: Display calculated heart rate
-                    if let bpm = camera.estimatedBPM {
-                        Text("\(Int(bpm.rounded())) BPM")
-                            .font(.system(size: 45))
-                            .bold()
-                            .foregroundStyle(.red)
-                    } else {
-                        Text("Calculating heart rate...")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    //end of added code
-
                     if isReading {
                         Text("Please leave finger for \(secondsRemaining) seconds")
                             .font(.title2)
                             .bold()
+                        
+                        WaveformShape(points: heartbeatWave.points)
+                            .stroke(Color.red, style: StrokeStyle(lineWidth: 3, lineJoin: .round))
+                            .frame(height: 100)
                     }
                 }
-
+                
             } else if (CF && TF && LF && RF){
                 Image(systemName: "arrow.down")
                     .font(.system(size: 70))
@@ -151,13 +150,13 @@ struct ReadingView: View {
                     .bold()
             }
             else {
-
+                
                 Text("Please place finger over camera")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
             }
-
+            
             CameraView(session: camera.session)
                 .frame(width: 260, height: 260)
                 .clipShape(Circle())
@@ -165,13 +164,21 @@ struct ReadingView: View {
                     Circle()
                         .stroke(Color.gray, lineWidth: 4)
                 )
+                .overlay {
+                    if isReading {
+                        Text(camera.estimatedBPM.map { String(Int($0.rounded())) } ?? "--")
+                            .font(.system(size: 72, weight: .bold))
+                    
+                        .foregroundStyle(.black)
+                    }
+                }
                 .onAppear {
                     camera.turnFlashlightOn()
                 }
                 .onDisappear {
                     camera.turnFlashlightOff()
                 }
-                .onChange(of: camera.centerRed) { _, _ in
+                .onChange(of: camera.centerRed) { _ in
 
                     let LVR = camera.topRed > minRVal
                     let RVR = camera.bottomRed > minRVal
@@ -268,9 +275,94 @@ struct ReadingView: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
-        .navigationDestination(isPresented: $showResults) {
-            ResultsView()
+        .onChange(of: isReading) { nowReading in
+            if nowReading {
+                bpmValuesThisReading = []
+                heartbeatWave.beatsPerMinute = camera.estimatedBPM
+                heartbeatWave.start()
+            } else {
+                heartbeatWave.stop()
+            }
         }
+        .onChange(of: camera.estimatedBPM) {latestBPM in
+            heartbeatWave.beatsPerMinute = latestBPM
+            if isReading, let latestBPM = latestBPM {
+                bpmValuesThisReading.append(latestBPM)
+            }
+        }
+        .navigationDestination(isPresented: $showResults) {
+            ResultsView(averageBPM: averageBPM)
+        }
+    }
+}
+
+
+// The wave is drawn to match a BPM, it illustrates the rate.
+struct WaveformShape: Shape {
+    let points: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard points.count > 1 else { return path }
+
+        let xSpacing = rect.width / CGFloat(points.count - 1)
+        let centerY = rect.midY
+        let heightScale = rect.height * 0.35
+
+        for (index, height) in points.enumerated() {
+            let x = CGFloat(index) * xSpacing
+            let y = centerY - CGFloat(height) * heightScale
+            if index == 0 {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        }
+        return path
+    }
+}
+
+// A scrolling wave that beats at `beatsPerMinute`.
+// While `beatsPerMinute` is nil there is no heart rate yet, so it draws a flat line.
+final class HeartbeatWave: ObservableObject {
+    private static let pointCount = 150
+    private static let updatesPerSecond = 30.0
+
+    @Published var points: [Double] = Array(repeating: 0, count: HeartbeatWave.pointCount)
+    var beatsPerMinute: Double? = nil
+
+    private var angle = 0.0                      // where we are in the current beat
+    private var timer: Timer?
+
+    func start() {
+        stop()
+        points = Array(repeating: 0, count: HeartbeatWave.pointCount)
+        angle = 0.0
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / HeartbeatWave.updatesPerSecond, repeats: true) { [weak self] _ in
+            self?.addNextPoint()
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    deinit {
+        stop()
+    }
+
+    private func addNextPoint() {
+        var height = 0.0
+        if let currentRate = beatsPerMinute {
+            let beatsPerSecond = currentRate / 60.0
+            angle += beatsPerSecond * 2.0 * Double.pi / HeartbeatWave.updatesPerSecond
+            let mainBeat = sin(angle)
+            let smallerBump = 0.35 * sin(2.0 * angle + 0.5)
+            height = mainBeat + smallerBump
+        }
+        points.append(height)
+        points.removeFirst()
     }
 }
 
