@@ -11,6 +11,7 @@ struct ReadingView: View {
     let minRVal = 140
     let maxBVal = 70
     let maxGVal = 130
+    let readTime = 60
     @State private var isReading = false
     @State private var readingStoppedEarly = false
     @State private var startTime: Date?
@@ -18,6 +19,7 @@ struct ReadingView: View {
     @State private var readingComplete = false
     @State private var lastFingerDetectedTime: Date?
     @State private var showWarning = true
+    @State private var showIncomplete = false
 
     @AppStorage("neverShowWarning") private var neverShowWarning = false
     let readingDuration: TimeInterval = 60
@@ -222,7 +224,7 @@ struct ReadingView: View {
                                 isReading = true
                                 readingStoppedEarly = false
                                 startTime = Date()
-                                secondsRemaining = 60
+                                secondsRemaining = readTime
                                 camera.lockCameraSettings()
                                 camera.startRecording()
                             }
@@ -249,11 +251,13 @@ struct ReadingView: View {
                         } else if isReading {
                             
                             camera.stopRecording()
-                            
                             isReading = false
                             readingStoppedEarly = true
                             startTime = nil
-                            secondsRemaining = 60
+                            if(secondsRemaining <= readTime/2){
+                                showIncomplete = true
+                            }
+                            secondsRemaining = readTime
                         }
                     }
                /* Text("TOP RGB(\(camera.leftRed), \(camera.leftGreen), \(camera.leftBlue))")
@@ -296,6 +300,55 @@ struct ReadingView: View {
                                 Toggle("Don't show again", isOn: $neverShowWarning)
                                 Button("Continue") {
                                     showWarning = false
+                                }
+                                .padding()
+                                .frame(width: 180)
+                                .background(.white)
+                                .foregroundStyle(.black)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .padding(30)
+                            .background(.gray)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .shadow(radius: 15)
+                            .padding(.horizontal, 40)
+                        }
+            if showIncomplete  {
+
+                            Color.black.opacity(0.45)
+                                .ignoresSafeArea()
+
+                            VStack(spacing: 20) {
+                                Image(systemName: "heart.slash")
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(.white)
+
+                                Text("Reading Incomplete")
+                                    .font(.title)
+                                    .bold()
+
+                                Text("We recommend you retake the test for best results")
+                                    .multilineTextAlignment(.leading)
+                               
+                                Button("Retake") {
+                                    showIncomplete = false
+                                    
+                                }
+                                .padding()
+                                    .frame(width: 180)
+                                    .background(.white)
+                                    .foregroundStyle(.black)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                Button("View results") {
+                                    showIncomplete = false
+                                    camera.stopRecording()
+                                    isReading = false
+                                    readingComplete = true
+                                    secondsRemaining = 0
+                                    startTime = nil
+                                
+                                    showResults = true
+                                    
                                 }
                                 .padding()
                                 .frame(width: 180)
