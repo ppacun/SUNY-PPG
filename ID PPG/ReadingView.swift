@@ -21,6 +21,7 @@ struct ReadingView: View {
     @State private var lastFingerDetectedTime: Date?
     @State private var showWarning = true
     @State private var showIncomplete = false
+    @State private var neverShowWarningA = false
     
     @AppStorage("neverShowWarning") private var neverShowWarning = false
     let readingDuration: TimeInterval = 60
@@ -384,9 +385,12 @@ struct ReadingView: View {
                     
                     Text("Remain Quiet\nRemain Still\nRemain Calm")
                         .multilineTextAlignment(.leading)
-                    Toggle("Don't show again", isOn: $neverShowWarning)
+                    Toggle("Don't show again", isOn: $neverShowWarningA)
                     Button("Continue") {
                         showWarning = false
+                        if(neverShowWarningA){
+                            neverShowWarning = true
+                        }
                     }
                     .padding()
                     .frame(width: 180)
