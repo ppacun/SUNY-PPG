@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ResultsView: View {
     let averageBPM: Double?
-
+    @Binding var path: NavigationPath
     @StateObject private var camera = CameraManager()
 
     var body: some View {
@@ -18,24 +18,15 @@ struct ResultsView: View {
                 .font(.largeTitle)
                 .bold()
 
-            CameraView(session: camera.session)
-                .frame(width: 260, height: 260)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(Color.gray, lineWidth: 4)
-                )
-                .overlay {
-                    Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
-                        .font(.system(size: 72, weight: .bold))
-                        .foregroundStyle(.black)
-                }
-                .onAppear {
-                    camera.turnFlashlightOn()
-                }
-                .onDisappear {
-                    camera.turnFlashlightOff()
-                }
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 260, height: 260)
+
+                Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
+                    .font(.system(size: 72, weight: .bold))
+                    .foregroundStyle(.white)
+            }
 
             Text("Average Heart Rate")
                 .font(.title2)
@@ -45,6 +36,19 @@ struct ResultsView: View {
             StaticHeartbeatWave(bpm: averageBPM)
         }
         .padding()
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    path.removeLast(path.count)
+                } label: {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -79,10 +83,14 @@ struct StaticHeartbeatWave: View {
             .frame(height: 100)
     }
 }
-
 struct ResultsView_Previews: PreviewProvider {
     static var previews: some View {
-        ResultsView(averageBPM: 72)  // 72 is a placeholder data for xcode's canvas (to test if a value appears)
+        NavigationStack {
+            ResultsView(
+                averageBPM: 72,
+                path: .constant(NavigationPath())
+            )
+        }
     }
 }
 
