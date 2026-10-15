@@ -9,38 +9,83 @@ import SwiftUI
 
 struct ResultsView: View {
     let averageBPM: Double?
-    @Binding var path: NavigationPath
+    let confidancePCT: Double
+
     @StateObject private var camera = CameraManager()
-
+    @AppStorage("patientAge") private var patientAge = 18.0
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Reading Completed")
-                .font(.largeTitle)
-                .bold()
+        NavigationStack() {
+            VStack(spacing: 20) {
+                Text(rangeMessage(patientAge, averageBPM))
+                    .font(.largeTitle)
+                    .foregroundStyle(rangeColor(patientAge, averageBPM))
+                    .multilineTextAlignment(.center)
+                Text("Based on a popluation average")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                StaticHeartbeatWave(bpm: averageBPM)
+                HStack(){
+                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                        Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
+                            .font(.system(size: 72, weight: .bold))
+                            .foregroundStyle(rangeColor(patientAge, averageBPM))
+                        
+                        Text("BPM")
+                            .font(.title2)
+                            .foregroundStyle(rangeColor(patientAge, averageBPM))
+                    }
+                }
+                Text("@" + "99.9" + "% confidence" )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Spacer()
+                NavigationLink {
+                    PastReadingsView()
+                } label: {
 
-            ZStack {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 260, height: 260)
+                    Text("Save My Reading")
+                        .font(.title)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(width: 350, height: 80)
+                        .background(.gray)
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: 25)
+                        )
+                }
+                .padding(.horizontal, 40)
+                NavigationLink {
+                    HomeView()
+                        .navigationBarBackButtonHidden()
+                } label: {
 
-                Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
-                    .font(.system(size: 72, weight: .bold))
-                    .foregroundStyle(.white)
+                    Text("Not my reading")
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(width: 250, height: 80)
+                        .background(.gray)
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: 25)
+                        )
+                }
+                .padding(.horizontal, 40)
+          
+                
+                
+                
+                
+                
             }
-
-            Text("Average Heart Rate")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-
-            // Solid wave drawn at the average BPM
-            StaticHeartbeatWave(bpm: averageBPM)
         }
         .padding()
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    path.removeLast(path.count)
+                NavigationLink {
+                    HomeView().navigationBarBackButtonHidden()
                 } label: {
                     HStack {
                         Image(systemName: "chevron.left")
@@ -51,7 +96,42 @@ struct ResultsView: View {
         }
     }
 }
+private func rangeMessage(
+    _ patientAge: Double,
+    _ averageBPM: Double?
+) -> String {
 
+    guard let averageBPM, averageBPM.isFinite else {
+        return "No heart rate reading available"
+    }
+
+    let range = heartRange(age: Int(patientAge))
+    let bpm = Int(averageBPM.rounded())
+
+    if range.contains(bpm) {
+        return "Within the resting range for your age."
+    } else if bpm < range.lowerBound {
+        return "Below the resting range for your age."
+    } else {
+        return "Above the resting range for your age."
+    }
+}
+private func rangeColor(_ patientAge: Double, _ averageBPM: Double?)-> Color{
+    guard let averageBPM, averageBPM.isFinite else {
+        return .white
+    }
+
+    let range = heartRange(age: Int(patientAge))
+    let bpm = Int(averageBPM.rounded())
+
+    if range.contains(bpm) {
+        return .green
+    } else if bpm < range.lowerBound {
+        return .blue
+    } else {
+        return .red
+    }
+}
 
 // Same wave shape the live wave uses, so both look alike.
 func heartbeatHeight(angle: Double) -> Double {
@@ -88,11 +168,37 @@ struct ResultsView_Previews: PreviewProvider {
         NavigationStack {
             ResultsView(
                 averageBPM: 72,
-                path: .constant(NavigationPath())
+                confidancePCT: 99.9,
+               // path: .constant(NavigationPath())
             )
         }
     }
 }
+func heartRange(age: Int) -> ClosedRange<Int> {
 
+    switch age {
+
+    case 0:
+        // This is tricky because newborn vs infant is based on months.
+        // If you're only storing age in years, use this as a broad infant range.
+        return 80...160
+
+    case 1...2:
+ 
+        return 80...130
+
+    case 3...5:
+     
+        return 80...110
+
+    case 6...12:
+       
+        return 70...100
+
+    default:
+        
+        return 60...100
+    }
+}
 
     

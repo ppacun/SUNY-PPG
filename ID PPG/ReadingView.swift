@@ -1,13 +1,13 @@
 // xcode: set sdk=iOS
 
 import SwiftUI
-
+import AudioToolbox
 struct ReadingView: View {
     
     @State private var showResults = false
     @StateObject private var camera = CameraManager()
     @StateObject private var heartbeatWave = HeartbeatWave()
-    @Binding var path: NavigationPath
+   
     @State private var bpmValuesThisReading: [Double] = []
     let minRVal = 140
     let maxBVal = 70
@@ -298,6 +298,7 @@ struct ReadingView: View {
                                         )
                                         
                                         if elapsed >= readingDuration {
+                                            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
                                             camera.stopRecording()
                                             isReading = false
                                             readingComplete = true
@@ -363,7 +364,8 @@ struct ReadingView: View {
                     .navigationDestination(isPresented: $showResults) {
                         ResultsView(
                             averageBPM: averageBPM,
-                            path: $path
+                            confidancePCT: 99.9,
+                            //path: $path
                         )
                     }
                     
@@ -539,7 +541,7 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             ReadingView(
-                path: .constant(NavigationPath())
+                
             )
         }
     }

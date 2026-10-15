@@ -1,20 +1,22 @@
-//
-//  HealthRecommendationsView.swift
-//  ID PPG
-//
-//  Created by Dylan Gonzalez on 30/9/2026.
-//
 import SwiftUI
 
 struct HealthRecommendationsView: View {
+
+    //@Binding var path: NavigationPath
+
     var body: some View {
-        HStack {
-            Spacer()
-            Text("Health Recomendations \nto be implemented")
-                .multilineTextAlignment(.center)
-            Spacer()
+
+        VStack {
+            NavigationLink {
+                ResultsView(
+                     averageBPM: 60,
+                     confidancePCT: 99.9
+                )
+            } label: {
+                Text("Health Recommendations\nto be implemented")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+            }
         }
     }
-    
-    
 }
