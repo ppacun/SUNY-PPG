@@ -6,14 +6,21 @@
 //
 import SwiftUI
 
+
+
 struct PastReadingsView: View {
+    @AppStorage("neverShowWarning") private var neverShowWarning = false
     var body: some View {
         HStack {
             Spacer()
             Text("Past Readings \nto be implemented")
                 .multilineTextAlignment(.center)
+                .onTapGesture {
+                    neverShowWarning = false
+                }
+
             Spacer()
         }
     }
-    
+
 }

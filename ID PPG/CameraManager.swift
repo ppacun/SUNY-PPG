@@ -3,9 +3,14 @@ import AVFoundation
 class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let CFPS = 30
     let session = AVCaptureSession()
-
+    
     private var cameraDevice: AVCaptureDevice?
-
+    private var isRecording = false
+    private var csvURL: URL?
+    @Published var lastCSVURL: URL?
+    @Published var avgRed: Int = 0
+    @Published var avgGreen: Int = 0
+    @Published var avgBlue: Int = 0
     @Published var centerRed: Int = 0
     @Published var centerGreen: Int = 0
     @Published var centerBlue: Int = 0
@@ -21,15 +26,165 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     @Published var bottomRed: Int = 0
     @Published var bottomGreen: Int = 0
     @Published var bottomBlue: Int = 0
+    
+    // for the integration from dylans camera code to mine (yaren's) pulse signal processor code
+    // Track B: Pulse signal processing
+    @Published var estimatedBPM: Double?
+    @Published var signalScore: Double = 0
+
+    private let pulseProcessor = PulseSignalProcessor()
+    private var pulseSamples: [PPGSample] = []
+    private var frameCounter = 0
+    //end of the code i added for integration- yaren
 
     override init() {
         super.init()
         setupCamera()
     }
+    //also for integration:
+    
+    // Track B: Receive RGB measurements from the camera
+    private func processPulseSample(
+        timestamp: TimeInterval,
+        red: Int,
+        green: Int,
+        blue: Int
+    ) {
+        let sample = PPGSample(
+            timestamp: timestamp,
+            red: Double(red),
+            green: Double(green),
+            blue: Double(blue)
+        )
 
+        pulseSamples.append(sample)
+
+        // Keep the most recent 12 seconds
+        pulseSamples.removeAll {
+            timestamp - $0.timestamp > 12.0
+        }
+
+        frameCounter += 1
+
+        // Process approximately once every 30 frames
+        guard frameCounter >= 30 else {
+            return
+        }
+
+        frameCounter = 0
+
+        // Wait until at least 10 seconds of data is available
+        guard let first = pulseSamples.first,
+              timestamp - first.timestamp >= 10.0 else {
+            return
+        }
+
+        let result = pulseProcessor.estimate(
+            from: pulseSamples
+        )
+
+        DispatchQueue.main.async {
+            self.estimatedBPM = result?.bpm
+            self.signalScore = result?.signalScore ?? 0
+        }
+    }
+    //end of added code
+
+    private func saveReading(
+        avgRed: Int,
+        avgGreen: Int,
+        avgBlue: Int
+    ) {
+        guard isRecording,
+              let url = csvURL else {
+            return
+        }
+
+        let timestamp = Date().timeIntervalSince1970
+
+        let row = "\(timestamp),\(avgRed),\(avgGreen),\(avgBlue)\n"
+
+        guard let data = row.data(using: .utf8) else {
+            return
+        }
+
+        do {
+            let fileHandle = try FileHandle(forWritingTo: url)
+
+            fileHandle.seekToEndOfFile()
+            fileHandle.write(data)
+
+            try fileHandle.close()
+
+        } catch {
+            print("Could not write CSV:", error)
+        }
+    }
+    func startRecording() {
+        let documents = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        )[0]
+
+        let fileName = "PPG_\(Int(Date().timeIntervalSince1970)).csv"
+        let url = documents.appendingPathComponent(fileName)
+
+        csvURL = url
+        lastCSVURL = url
+
+        let header = "timestamp,avgRed,avgGreen,avgBlue\n"
+
+        do {
+            try header.write(
+                to: url,
+                atomically: true,
+                encoding: .utf8
+            )
+
+            isRecording = true
+
+            print("Recording started:")
+            print(url)
+
+        } catch {
+            print("Could not create CSV:", error)
+        }
+    }
+    func lockCameraSettings() {
+        guard let device = cameraDevice else { return }
+
+        do {
+            try device.lockForConfiguration()
+
+            if device.isExposureModeSupported(.locked) {
+                device.exposureMode = .locked
+            }
+
+            if device.isWhiteBalanceModeSupported(.locked) {
+                device.whiteBalanceMode = .locked
+            }
+
+            if device.isFocusModeSupported(.locked) {
+                device.focusMode = .locked
+            }
+
+            device.unlockForConfiguration()
+
+        } catch {
+            print("Could not lock camera settings:", error)
+        }
+    }
+    func stopRecording() {
+        isRecording = false
+
+        if let url = csvURL {
+            print("Recording stopped:")
+            print(url)
+        }
+    }
     private func setupCamera() {
         session.beginConfiguration()
-
+        session.sessionPreset = .low
         guard let camera = AVCaptureDevice.default(
             .builtInWideAngleCamera,
             for: .video,
@@ -172,12 +327,55 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         let bottomBlueValue = buffer[bottomPixelIndex]
         let bottomGreenValue = buffer[bottomPixelIndex + 1]
         let bottomRedValue = buffer[bottomPixelIndex + 2]
+        let avgR = (
+            Int(centerRedValue) +
+            Int(leftRedValue) +
+            Int(rightRedValue) +
+            Int(topRedValue) +
+            Int(bottomRedValue)
+        ) / 5
+
+        let avgG = (
+            Int(centerGreenValue) +
+            Int(leftGreenValue) +
+            Int(rightGreenValue) +
+            Int(topGreenValue) +
+            Int(bottomGreenValue)
+        ) / 5
+
+        let avgB = (
+            Int(centerBlueValue) +
+            Int(leftBlueValue) +
+            Int(rightBlueValue) +
+            Int(topBlueValue) +
+            Int(bottomBlueValue)
+        ) / 5
 
         CVPixelBufferUnlockBaseAddress(
             pixelBuffer,
             .readOnly
         )
+        saveReading(
+            avgRed: avgR,
+            avgGreen: avgG,
+            avgBlue: avgB
+        )
+        //adding here for the integration-yaren
+        // Track B: Send live RGB measurements to BPM processor
+        let timestamp = CMSampleBufferGetPresentationTimeStamp(
+            sampleBuffer
+        ).seconds
 
+        if timestamp.isFinite {
+            processPulseSample(
+                timestamp: timestamp,
+                red: avgR,
+                green: avgG,
+                blue: avgB
+            )
+        }
+        //end of added code
+        
         DispatchQueue.main.async {
             self.centerRed = Int(centerRedValue)
             self.centerGreen = Int(centerGreenValue)
@@ -194,6 +392,9 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             self.topRed = Int(topRedValue)
             self.topGreen = Int(topGreenValue)
             self.topBlue = Int(topBlueValue)
+            self.avgRed = avgR
+            self.avgGreen = avgG
+            self.avgBlue = avgB
         }
     }
 
@@ -206,7 +407,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         do {
             try device.lockForConfiguration()
 
-            try device.setTorchModeOn(level: 1.0)
+            try device.setTorchModeOn(level: 0.25)
 
             device.unlockForConfiguration()
 

@@ -5,19 +5,18 @@
 //  Created by Dylan Gonzalez on 29/9/2026.
 //
 import SwiftUI
-
 struct HomeView: View {
+    @State private var path = NavigationPath()
+
     var body: some View {
-        NavigationStack{
+        NavigationStack(path: $path) {
             VStack(spacing: 30){
                 Spacer()
                 Text("vablet cPPG")
                     .font(.system(size: 50))
                     .bold()
                 Spacer()
-                NavigationLink{
-                    ReadingView()
-                }label: {
+                NavigationLink(value: "reading") {
                     Text("Take Heart Rate")
                         .font(.largeTitle)
                         .foregroundStyle(.white)
@@ -71,6 +70,11 @@ struct HomeView: View {
                     .foregroundColor(.gray)
                     .padding(.bottom)
                 
+            }
+            .navigationDestination(for: String.self) { destination in
+                if destination == "reading" {
+                    ReadingView(path: $path)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

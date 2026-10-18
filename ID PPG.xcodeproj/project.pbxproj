@@ -22,6 +22,7 @@
 		A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B72306DA9FB006F443A /* ReadingView.swift */; };
 		BA55BF003079B15D0005FF58 /* PulseSignalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */; };
 		BA55BF023079E92E0005FF58 /* PPG_Testing1RGB.csv in Resources */ = {isa = PBXBuildFile; fileRef = BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */; };
+		A1F2BEC83079EFE800DF3DC5 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +54,7 @@
 		A19A4B72306DA9FB006F443A /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
 		BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseSignalProcess.swift; sourceTree = "<group>"; };
 		BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = PPG_Testing1RGB.csv; sourceTree = "<group>"; };
+		A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */,
+				A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */,
 				A19A4B70306D94F1006F443A /* HowItWorksView.swift */,
 				A19A4B6E306D94E2006F443A /* AboutUsView.swift */,
 				A19A4B6C306D94C4006F443A /* HealthRecommendationsView.swift */,
@@ -223,6 +226,7 @@
 			files = (
 				07CF7B16305869D9007EF444 /* ID_PPG.xcdatamodeld in Sources */,
 				BA55BF003079B15D0005FF58 /* PulseSignalProcess.swift in Sources */,
+				A1F2BEC83079EFE800DF3DC5 /* ResultsView.swift in Sources */,
 				A19A4B6B306D94B3006F443A /* PastReadingsView.swift in Sources */,
 				A19A4B69306C37B3006F443A /* HomeView.swift in Sources */,
 				07CF7B11305869D9007EF444 /* ID_PPGApp.swift in Sources */,
@@ -275,6 +279,7 @@
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -308,6 +313,7 @@
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
