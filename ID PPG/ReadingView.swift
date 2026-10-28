@@ -6,7 +6,7 @@ struct ReadingView: View {
     
     @State private var showResults = false
     @StateObject private var camera = CameraManager()
-    @StateObject private var heartbeatWave = HeartbeatWave()
+    @StateObject private var ecgWave = ECGHeartbeatWave()
    
     @State private var bpmValuesThisReading: [Double] = []
     let minRVal = 140
@@ -103,7 +103,7 @@ struct ReadingView: View {
                                     .font(.title2)
                                     .bold()
                                     
-                                    WaveformShape(points: heartbeatWave.points)
+                                    WaveformShape(points: ecgWave.points)
                                         .stroke(
                                             Color.red,
                                             style: StrokeStyle(
@@ -348,15 +348,18 @@ struct ReadingView: View {
                     .padding()
                     .onChange(of: isReading) { nowReading in
                         if nowReading {
+                            //reset BPM values and start the ECG-style animation
                             bpmValuesThisReading = []
-                            heartbeatWave.beatsPerMinute = camera.estimatedBPM
-                            heartbeatWave.start()
+                            ecgWave.beatsPerMinute = camera.estimatedBPM
+                            ecgWave.start()
                         } else {
-                            heartbeatWave.stop()
+                            //stop the animation when the reading ends
+                            ecgWave.stop()
                         }
                     }
                     .onChange(of: camera.estimatedBPM) { latestBPM in
-                        heartbeatWave.beatsPerMinute = latestBPM
+                        ecgWave.beatsPerMinute = latestBPM
+                        //heartbeatWave.beatsPerMinute = latestBPM
                         if isReading, let latestBPM = latestBPM {
                             bpmValuesThisReading.append(latestBPM)
                         }
@@ -471,6 +474,7 @@ struct WaveformShape: Shape {
         let xSpacing = rect.width / CGFloat(points.count - 1)
         let centerY = rect.midY
         let heightScale = rect.height * 0.35
+        
 
         for (index, height) in points.enumerated() {
             let x = CGFloat(index) * xSpacing
@@ -485,29 +489,27 @@ struct WaveformShape: Shape {
     }
 }
 
-// A scrolling wave that beats at `beatsPerMinute`.
-// While `beatsPerMinute` is nil there is no heart rate yet, so it draws a flat line.
-final class HeartbeatWave: ObservableObject {
-    private static let pointCount = 150
-    private static let updatesPerSecond = 30.0
 
-    @Published var points: [Double] = Array(
-        repeating: 0,
-        count: HeartbeatWave.pointCount
-    )
-    var beatsPerMinute: Double? = nil
+//creates an ECG-style heartbeat animation.
+//the shape is illustrative, but its speed follows
+//the actual BPM calculated by PulseSignalProcessor.
+final class ECGHeartbeatWave: ObservableObject {
 
-    private var angle = 0.0  // where we are in the current beat
+    @Published var points: [Double] = Array(repeating: 0, count: 150)
+
+    var beatsPerMinute: Double?
+
+    private var phase = 0.0
     private var timer: Timer?
+
+    private let updatesPerSecond = 30.0
 
     func start() {
         stop()
-        points = Array(repeating: 0, count: HeartbeatWave.pointCount)
-        angle = 0.0
-        timer = Timer.scheduledTimer(
-            withTimeInterval: 1.0 / HeartbeatWave.updatesPerSecond,
-            repeats: true
-        ) { [weak self] _ in
+        phase = 0
+        points = Array(repeating: 0, count: 150)
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / updatesPerSecond, repeats: true) { [weak self] _ in
             self?.addNextPoint()
         }
     }
@@ -522,20 +524,32 @@ final class HeartbeatWave: ObservableObject {
     }
 
     private func addNextPoint() {
-        var height = 0.0
-        if let currentRate = beatsPerMinute {
-            let beatsPerSecond = currentRate / 60.0
-            angle +=
-                beatsPerSecond * 2.0 * Double.pi
-                / HeartbeatWave.updatesPerSecond
-            let mainBeat = sin(angle)
-            let smallerBump = 0.35 * sin(2.0 * angle + 0.5)
-            height = mainBeat + smallerBump
+        var value = 0.0
+
+        if let bpm = beatsPerMinute, bpm.isFinite, bpm > 0 {
+            // One complete heartbeat cycle per measured beat.
+            phase += (bpm / 60.0) / updatesPerSecond
+            phase.formTruncatingRemainder(dividingBy: 1.0)
+
+            // Illustrative ECG shape: P wave, QRS spike, and T wave.
+            func peak(_ center: Double, _ width: Double, _ height: Double) -> Double {
+                let distance = (phase - center) / width
+                return height * exp(-0.5 * distance * distance)
+            }
+
+            value =
+                peak(0.18, 0.035, 0.12) -
+                peak(0.39, 0.012, 0.18) +
+                peak(0.42, 0.008, 1.0) -
+                peak(0.45, 0.012, 0.30) +
+                peak(0.68, 0.075, 0.23)
         }
-        points.append(height)
+
+        points.append(value)
         points.removeFirst()
     }
 }
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

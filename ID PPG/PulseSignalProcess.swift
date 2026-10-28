@@ -26,6 +26,8 @@ struct PulseResult {
     let bpm: Double
     let signalScore: Double
     let windowSeconds: Double
+    //track b - storing the real filtered ppg measurement, the readings will be displayed witht he actual waveform
+    let filteredWaves: [Double]
 }
 
 
@@ -68,25 +70,25 @@ struct PulseSignalProcessor {
 
         let duration = last.timestamp - first.timestamp
 
-        // At least 10 seconds of measurements are required.
+        //at least 10 seconds of measurements are required.
         guard duration >= minimumSeconds else {
             return nil
         }
 
-        // Reject recordings with too many missing frames.
+        //reject recordings with too many missing frames.
         guard Double(data.count) >= duration * sampleRate * 0.65 else {
             return nil
         }
 
-        // STEP 1: Convert measurements to a uniform 30 Hz.
+        //first, convert measurements to a uniform 30 Hz.
         guard let signal = resample(data) else {
             return nil
         }
 
-        // STEP 2: Remove gradual changes in brightness.
+        //second, remove gradual changes in brightness.
         let cleanSignal = detrend(signal)
 
-        // STEP 3: Keep frequencies between 0.7 and 4 Hz.
+        //third, keep frequencies between 0.7 and 4 Hz.
         let filteredSignal = bandpassFilter(cleanSignal)
 
         // STEP 4: Estimate heart rate using Accelerate FFT.
@@ -94,11 +96,13 @@ struct PulseSignalProcessor {
             return nil
         }
 
-        // Return the result to the rest of the app.
+        //then return the result to the rest of the app.
         return PulseResult(
             bpm: result.bpm,
             signalScore: result.score,
-            windowSeconds: duration
+            windowSeconds: duration,
+            //return the filtered red-channel ppg measurement
+            filteredWaves: filteredSignal
         )
     }
 

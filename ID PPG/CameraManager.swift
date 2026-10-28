@@ -31,11 +31,16 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     // Track B: Pulse signal processing
     @Published var estimatedBPM: Double?
     @Published var signalScore: Double = 0
+    @Published var filteredWaves: [Double] = []
 
     private let pulseProcessor = PulseSignalProcessor()
     private var pulseSamples: [PPGSample] = []
     private var frameCounter = 0
+    private var waveFrameCounter = 0 //to prevent laggy waveform
     //end of the code i added for integration- yaren
+    private var scrollingWaveBuffer: [Double] = []
+    private var lastDisplayedWaveTime: TimeInterval?
+    private var waveformBaseline: Double?
 
     override init() {
         super.init()
@@ -63,6 +68,36 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         pulseSamples.removeAll {
             timestamp - $0.timestamp > 12.0
         }
+        waveFrameCounter += 1
+        if waveFrameCounter >= 3 {
+            waveFrameCounter = 0
+            if pulseSamples.count >= 151,
+               let resampled = pulseProcessor.resample(pulseSamples) {
+                let detrended = pulseProcessor.detrend(resampled)
+                let filtered = pulseProcessor.bandpassFilter(detrended)
+                guard let firstSample = pulseSamples.first else { return }
+                let waveformStartTime = firstSample.timestamp
+                let filterDelaySamples = 75
+                let finalCount = max(0, filtered.count - filterDelaySamples)
+                
+                for i in 0..<finalCount {
+                    let sampleTime = waveformStartTime + Double(i) / pulseProcessor.sampleRate
+                    if let lastTime = lastDisplayedWaveTime, sampleTime <= lastTime + 0.0001 {
+                        continue
+                    }
+                    let value = filtered[i]
+                    scrollingWaveBuffer.append(value)
+                    lastDisplayedWaveTime = sampleTime
+                }
+                if scrollingWaveBuffer.count > 150 {
+                    scrollingWaveBuffer.removeFirst(scrollingWaveBuffer.count - 150)
+                }
+                let displayedWaves = scrollingWaveBuffer
+                DispatchQueue.main.async {
+                    self.filteredWaves = displayedWaves
+                }
+            }
+        }
 
         frameCounter += 1
 
@@ -86,6 +121,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         DispatchQueue.main.async {
             self.estimatedBPM = result?.bpm
             self.signalScore = result?.signalScore ?? 0
+            //send the real filtered ppg smaples to readingview and clear the waveform if processing return no result
         }
     }
     //end of added code
