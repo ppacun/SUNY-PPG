@@ -10,7 +10,7 @@ struct HealthRecommendationsView: View {
             NavigationLink {
                 ResultsView(
                      averageBPM: 60,
-                     confidancePCT: 99.9
+                     confidencePCT: 99.9
                 )
             } label: {
                 Text("Health Recommendations\nto be implemented")

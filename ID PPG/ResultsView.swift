@@ -9,10 +9,13 @@ import SwiftUI
 
 struct ResultsView: View {
     let averageBPM: Double?
-    let confidancePCT: Double
+    let confidencePCT: Double
 
     @StateObject private var camera = CameraManager()
     @AppStorage("patientAge") private var patientAge = 18.0
+    @State private var showSaveSheet = false
+    @State private var showPastReadings = false
+    
     var body: some View {
         NavigationStack() {
             VStack(spacing: 20) {
@@ -20,7 +23,7 @@ struct ResultsView: View {
                     .font(.largeTitle)
                     .foregroundStyle(rangeColor(patientAge, averageBPM))
                     .multilineTextAlignment(.center)
-                Text("Based on a popluation average")
+                Text("Based on a population average")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -30,7 +33,7 @@ struct ResultsView: View {
                         Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
                             .font(.system(size: 72, weight: .bold))
                             .foregroundStyle(rangeColor(patientAge, averageBPM))
-                        
+
                         Text("BPM")
                             .font(.title2)
                             .foregroundStyle(rangeColor(patientAge, averageBPM))
@@ -41,8 +44,8 @@ struct ResultsView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Spacer()
-                NavigationLink {
-                    PastReadingsView()
+                Button {
+                    showSaveSheet = true
                 } label: {
 
                     Text("Save My Reading")
@@ -55,6 +58,7 @@ struct ResultsView: View {
                             RoundedRectangle(cornerRadius: 25)
                         )
                 }
+                .disabled(averageBPM == nil)
                 .padding(.horizontal, 40)
                 NavigationLink {
                     HomeView()
@@ -72,24 +76,34 @@ struct ResultsView: View {
                         )
                 }
                 .padding(.horizontal, 40)
-          
-                
-                
-                
-                
-                
+            }
+            .sheet(isPresented: $showSaveSheet) {
+                if let bpm = averageBPM {
+                    SaveReadingSheet(bpm: bpm) { activity, date in
+                        ReadingStore.shared.add(
+                            bpm: bpm,
+                            confidence: confidencePCT,
+                            activity: activity,
+                            date: date
+                        )
+                        showPastReadings = true
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showPastReadings) {
+                PastReadingsView()
             }
         }
         .padding()
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 NavigationLink {
                     HomeView().navigationBarBackButtonHidden()
                 } label: {
                     HStack {
                         Image(systemName: "chevron.left")
-                        
+
                     }
                 }
             }
@@ -168,8 +182,7 @@ struct ResultsView_Previews: PreviewProvider {
         NavigationStack {
             ResultsView(
                 averageBPM: 72,
-                confidancePCT: 99.9,
-               // path: .constant(NavigationPath())
+                confidencePCT: 99.9
             )
         }
     }
@@ -184,21 +197,19 @@ func heartRange(age: Int) -> ClosedRange<Int> {
         return 80...160
 
     case 1...2:
- 
+
         return 80...130
 
     case 3...5:
-     
+
         return 80...110
 
     case 6...12:
-       
+
         return 70...100
 
     default:
-        
+
         return 60...100
     }
 }
-
-    
