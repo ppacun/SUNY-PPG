@@ -9,8 +9,8 @@ struct HealthRecommendationsView: View {
         VStack {
             NavigationLink {
                 ResultsView(
-                     averageBPM: 60,
-                     confidancePCT: 99.9
+                    averageBPM: 60,
+                    finalPPGWaveform: []
                 )
             } label: {
                 Text("Health Recommendations\nto be implemented")

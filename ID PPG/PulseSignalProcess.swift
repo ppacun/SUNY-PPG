@@ -525,3 +525,81 @@ struct PulseSignalProcessor {
         return (bpm: bpm, score: score)
     }
 }
+
+
+final class BPMStabilizer {
+    private var recentBPM: [Double] = []
+    private var pendingBPM: [Double] = []
+
+    private let maxHistory = 5
+    private let jumpThreshold = 15.0
+    private let requiredConfirmations = 3
+
+    func stabilize(_ newBPM: Double) -> Double? {
+        guard newBPM.isFinite, newBPM > 0 else {
+            return currentBPM
+        }
+
+        guard let previous = currentBPM else {
+            accept(newBPM)
+            return currentBPM
+        }
+
+        if abs(newBPM - previous) <= jumpThreshold {
+            pendingBPM.removeAll()
+            accept(newBPM)
+            return currentBPM
+        }
+
+        let direction = newBPM > previous ? 1 : -1
+
+        if let first = pendingBPM.first {
+            let oldDirection = first > previous ? 1 : -1
+
+            if direction != oldDirection {
+                pendingBPM.removeAll()
+            }
+        }
+
+        pendingBPM.append(newBPM)
+
+        if pendingBPM.count >= requiredConfirmations {
+            let confirmed = median(pendingBPM)
+            recentBPM.removeAll()
+            accept(confirmed)
+            pendingBPM.removeAll()
+        }
+
+        return currentBPM
+    }
+
+    private func accept(_ bpm: Double) {
+        recentBPM.append(bpm)
+
+        if recentBPM.count > maxHistory {
+            recentBPM.removeFirst()
+        }
+    }
+
+    private func median(_ values: [Double]) -> Double {
+        let sorted = values.sorted()
+        let middle = sorted.count / 2
+
+        if sorted.count % 2 == 0 {
+            return (sorted[middle - 1] + sorted[middle]) / 2
+        }
+
+        return sorted[middle]
+    }
+
+    var currentBPM: Double? {
+        guard !recentBPM.isEmpty else { return nil }
+        return median(recentBPM)
+    }
+
+    func reset() {
+        recentBPM.removeAll()
+        pendingBPM.removeAll()
+    }
+}
+

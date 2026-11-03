@@ -9,75 +9,101 @@ import SwiftUI
 
 struct ResultsView: View {
     let averageBPM: Double?
-    let confidancePCT: Double
+    let finalPPGWaveform: [Double]
 
     @StateObject private var camera = CameraManager()
     @AppStorage("patientAge") private var patientAge = 18.0
     var body: some View {
         NavigationStack() {
             VStack(spacing: 20) {
-                Text(rangeMessage(patientAge, averageBPM))
-                    .font(.largeTitle)
-                    .foregroundStyle(rangeColor(patientAge, averageBPM))
-                    .multilineTextAlignment(.center)
-                Text("Based on a popluation average")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                StaticHeartbeatWave(bpm: averageBPM)
-                HStack(){
-                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                
+                VStack(spacing: 10) {
+                    Text("Heart Rate Result")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+
+                    Text(rangeMessage(patientAge, averageBPM))
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(rangeColor(patientAge, averageBPM))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Based on population averages")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 20)
+                
+ 
+                
+                VStack(spacing: 6) {
+                    Text("AVERAGE HEART RATE")
+                        .font(.system(size: 12, weight: .semibold))
+                        .tracking(2)
+                        .foregroundStyle(.secondary)
+
+                    HStack(alignment: .lastTextBaseline, spacing: 8) {
                         Text(averageBPM.map { String(Int($0.rounded())) } ?? "--")
-                            .font(.system(size: 72, weight: .bold))
+                            .font(.system(size: 86, weight: .bold, design: .rounded))
+                            .monospacedDigit()
                             .foregroundStyle(rangeColor(patientAge, averageBPM))
-                        
+
                         Text("BPM")
                             .font(.title2)
-                            .foregroundStyle(rangeColor(patientAge, averageBPM))
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                Text("@" + "99.9" + "% confidence" )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                
+                
+               
                 Spacer()
+              
                 NavigationLink {
                     PastReadingsView()
                 } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 18, weight: .semibold))
 
-                    Text("Save My Reading")
-                        .font(.title)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(width: 350, height: 80)
-                        .background(.gray)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: 25)
-                        )
+                        Text("Save My Reading")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.red)
+                    )
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 20)
+
+               
                 NavigationLink {
                     HomeView()
                         .navigationBarBackButtonHidden()
                 } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 16, weight: .medium))
 
-                    Text("Not my reading")
-                        .font(.title3)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(width: 250, height: 80)
-                        .background(.gray)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: 25)
-                        )
+                        Text("Not My Reading")
+                            .font(.system(size: 17, weight: .medium))
+                    }
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1.5)
+                    )
                 }
-                .padding(.horizontal, 40)
-          
-                
-                
-                
-                
-                
+                .padding(.horizontal, 20)
+
             }
         }
         .padding()
@@ -168,8 +194,7 @@ struct ResultsView_Previews: PreviewProvider {
         NavigationStack {
             ResultsView(
                 averageBPM: 72,
-                confidancePCT: 99.9,
-               // path: .constant(NavigationPath())
+                finalPPGWaveform: []
             )
         }
     }

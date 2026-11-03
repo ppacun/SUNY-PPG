@@ -9,6 +9,7 @@ struct ReadingView: View {
     @StateObject private var ecgWave = ECGHeartbeatWave()
    
     @State private var bpmValuesThisReading: [Double] = []
+    @State private var finalPPGWaveform: [Double] = []
     let minRVal = 140
     let maxBVal = 70
     let maxGVal = 130
@@ -299,6 +300,7 @@ struct ReadingView: View {
                                         
                                         if elapsed >= readingDuration {
                                             AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                                            finalPPGWaveform = camera.filteredWaves
                                             camera.stopRecording()
                                             isReading = false
                                             readingComplete = true
@@ -367,8 +369,7 @@ struct ReadingView: View {
                     .navigationDestination(isPresented: $showResults) {
                         ResultsView(
                             averageBPM: averageBPM,
-                            confidancePCT: 99.9,
-                            //path: $path
+                            finalPPGWaveform: finalPPGWaveform
                         )
                     }
                     

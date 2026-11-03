@@ -34,6 +34,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     @Published var filteredWaves: [Double] = []
 
     private let pulseProcessor = PulseSignalProcessor()
+    private let bpmStabilizer = BPMStabilizer()
     private var pulseSamples: [PPGSample] = []
     private var frameCounter = 0
     private var waveFrameCounter = 0 //to prevent laggy waveform
@@ -41,6 +42,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     private var scrollingWaveBuffer: [Double] = []
     private var lastDisplayedWaveTime: TimeInterval?
     private var waveformBaseline: Double?
+    private let cameraQueue = DispatchQueue(label: "camera.queue")
 
     override init() {
         super.init()
@@ -114,15 +116,21 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             return
         }
 
+
         let result = pulseProcessor.estimate(
             from: pulseSamples
         )
 
-        DispatchQueue.main.async {
-            self.estimatedBPM = result?.bpm
-            self.signalScore = result?.signalScore ?? 0
-            //send the real filtered ppg smaples to readingview and clear the waveform if processing return no result
+        // Smooth BPM and reject sudden jumps
+        let stableBPM = result.flatMap {
+            bpmStabilizer.stabilize($0.bpm)
         }
+
+        DispatchQueue.main.async {
+            self.estimatedBPM = stableBPM
+            self.signalScore = result?.signalScore ?? 0
+        }
+
     }
     //end of added code
 
@@ -157,6 +165,11 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         }
     }
     func startRecording() {
+        cameraQueue.async {
+            self.pulseSamples.removeAll()
+            self.bpmStabilizer.reset()
+            self.frameCounter = 0
+        }
         let documents = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
@@ -260,11 +273,9 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
 
         videoOutput.alwaysDiscardsLateVideoFrames = true
 
-        let queue = DispatchQueue(label: "cameraFrameQueue")
-
         videoOutput.setSampleBufferDelegate(
             self,
-            queue: queue
+            queue: cameraQueue
         )
 
         if session.canAddOutput(videoOutput) {
