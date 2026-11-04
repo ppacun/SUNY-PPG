@@ -35,6 +35,8 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
 
     private let pulseProcessor = PulseSignalProcessor()
     private let bpmStabilizer = BPMStabilizer()
+    private let beatDetector = PPGBeatDetector()
+    @Published var latestDetectedBeatTime: TimeInterval?
     private var pulseSamples: [PPGSample] = []
     private var frameCounter = 0
     private var waveFrameCounter = 0 //to prevent laggy waveform
@@ -90,6 +92,16 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
                     let value = filtered[i]
                     scrollingWaveBuffer.append(value)
                     lastDisplayedWaveTime = sampleTime
+                    
+                    //a pulse peak from the filtered PPG signal
+                    if let detectedTime = beatDetector.process(
+                        value: value,
+                        time: sampleTime
+                    ) {
+                        DispatchQueue.main.async {
+                            self.latestDetectedBeatTime = detectedTime
+                        }
+                    }
                 }
                 if scrollingWaveBuffer.count > 150 {
                     scrollingWaveBuffer.removeFirst(scrollingWaveBuffer.count - 150)
@@ -168,7 +180,19 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         cameraQueue.async {
             self.pulseSamples.removeAll()
             self.bpmStabilizer.reset()
+            self.beatDetector.reset()
+
             self.frameCounter = 0
+            self.waveFrameCounter = 0
+            self.scrollingWaveBuffer.removeAll()
+            self.lastDisplayedWaveTime = nil
+
+            DispatchQueue.main.async {
+                self.estimatedBPM = nil
+                self.signalScore = 0
+                self.filteredWaves = []
+                self.latestDetectedBeatTime = nil
+            }
         }
         let documents = FileManager.default.urls(
             for: .documentDirectory,

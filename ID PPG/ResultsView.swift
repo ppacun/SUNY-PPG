@@ -58,7 +58,29 @@ struct ResultsView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 
-                
+                VStack(spacing: 10) {
+                    Text("YOUR PULSE WAVEFORM")
+                        .font(.system(size: 12, weight: .semibold))
+                        .tracking(2)
+                        .foregroundStyle(.secondary)
+
+                    if finalPPGWaveform.count > 1 {
+                        WaveformShape(points: finalPPGWaveform)
+                            .stroke(
+                                Color.red,
+                                style: StrokeStyle(
+                                    lineWidth: 3,
+                                    lineJoin: .round
+                                )
+                            )
+                            .frame(height: 100)
+                    } else {
+                        Text("Waveform unavailable")
+                            .foregroundStyle(.secondary)
+                            .frame(height: 100)
+                    }
+                }
+                .padding(.horizontal, 20)
                
                 Spacer()
               

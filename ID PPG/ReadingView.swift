@@ -300,7 +300,7 @@ struct ReadingView: View {
                                         
                                         if elapsed >= readingDuration {
                                             AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-                                            finalPPGWaveform = camera.filteredWaves
+                                            finalPPGWaveform = ecgWave.points
                                             camera.stopRecording()
                                             isReading = false
                                             readingComplete = true
@@ -494,6 +494,7 @@ struct WaveformShape: Shape {
 //creates an ECG-style heartbeat animation.
 //the shape is illustrative, but its speed follows
 //the actual BPM calculated by PulseSignalProcessor.
+
 final class ECGHeartbeatWave: ObservableObject {
 
     @Published var points: [Double] = Array(repeating: 0, count: 150)
@@ -510,7 +511,10 @@ final class ECGHeartbeatWave: ObservableObject {
         phase = 0
         points = Array(repeating: 0, count: 150)
 
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / updatesPerSecond, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(
+            withTimeInterval: 1.0 / updatesPerSecond,
+            repeats: true
+        ) { [weak self] _ in
             self?.addNextPoint()
         }
     }
@@ -520,24 +524,27 @@ final class ECGHeartbeatWave: ObservableObject {
         timer = nil
     }
 
-    deinit {
-        stop()
-    }
-
     private func addNextPoint() {
         var value = 0.0
 
-        if let bpm = beatsPerMinute, bpm.isFinite, bpm > 0 {
-            // One complete heartbeat cycle per measured beat.
+        if let bpm = beatsPerMinute,
+           bpm.isFinite,
+           bpm > 0 {
+
+            //aave timing follows the actual estimated BPM from the pipeline
             phase += (bpm / 60.0) / updatesPerSecond
             phase.formTruncatingRemainder(dividingBy: 1.0)
 
-            // Illustrative ECG shape: P wave, QRS spike, and T wave.
-            func peak(_ center: Double, _ width: Double, _ height: Double) -> Double {
+            func peak(
+                _ center: Double,
+                _ width: Double,
+                _ height: Double
+            ) -> Double {
                 let distance = (phase - center) / width
                 return height * exp(-0.5 * distance * distance)
             }
 
+            //familiar ECG-style shape.
             value =
                 peak(0.18, 0.035, 0.12) -
                 peak(0.39, 0.012, 0.18) +
@@ -549,7 +556,12 @@ final class ECGHeartbeatWave: ObservableObject {
         points.append(value)
         points.removeFirst()
     }
+
+    deinit {
+        timer?.invalidate()
+    }
 }
+
 
 
 struct ContentView_Previews: PreviewProvider {

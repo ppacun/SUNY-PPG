@@ -603,3 +603,77 @@ final class BPMStabilizer {
     }
 }
 
+//beat detection for the wave
+
+final class PPGBeatDetector {
+
+    private var recentSamples: [(time: Double, value: Double)] = []
+    private var lastBeatTime: Double?
+
+    private let minimumBeatInterval = 0.35
+
+    func reset() {
+        recentSamples.removeAll()
+        lastBeatTime = nil
+    }
+
+    func process(value: Double, time: Double) -> Double? {
+        guard value.isFinite, time.isFinite else {
+            return nil
+        }
+
+        recentSamples.append((time: time, value: value))
+
+        recentSamples.removeAll {
+            time - $0.time > 3.0
+        }
+
+        guard recentSamples.count >= 30 else {
+            return nil
+        }
+
+        let count = recentSamples.count
+        let before = recentSamples[count - 3]
+        let candidate = recentSamples[count - 2]
+        let after = recentSamples[count - 1]
+
+        // Detect a local peak in the filtered signal.
+        guard candidate.value > before.value,
+              candidate.value >= after.value else {
+            return nil
+        }
+
+        let values = recentSamples.map(\.value)
+        let mean = values.reduce(0, +) / Double(values.count)
+
+        let variance = values.reduce(0.0) {
+            $0 + pow($1 - mean, 2)
+        } / Double(values.count)
+
+        let sd = sqrt(variance)
+
+        guard sd > 0.0001,
+              candidate.value > mean + 0.5 * sd else {
+            return nil
+        }
+
+        let precedingValues = recentSamples
+            .dropLast(2)
+            .suffix(9)
+            .map(\.value)
+
+        guard let minimum = precedingValues.min(),
+              candidate.value - minimum > 0.4 * sd else {
+            return nil
+        }
+
+        if let lastBeatTime,
+           candidate.time - lastBeatTime < minimumBeatInterval {
+            return nil
+        }
+
+        lastBeatTime = candidate.time
+        return candidate.time
+    }
+}
+
