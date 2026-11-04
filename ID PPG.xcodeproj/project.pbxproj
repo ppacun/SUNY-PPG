@@ -20,9 +20,9 @@
 		A19A4B6F306D94E8006F443A /* AboutUsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B6E306D94E2006F443A /* AboutUsView.swift */; };
 		A19A4B71306D94F7006F443A /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B70306D94F1006F443A /* HowItWorksView.swift */; };
 		A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A4B72306DA9FB006F443A /* ReadingView.swift */; };
+		A1F2BEC83079EFE800DF3DC5 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */; };
 		BA55BF003079B15D0005FF58 /* PulseSignalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */; };
 		BA55BF023079E92E0005FF58 /* PPG_Testing1RGB.csv in Resources */ = {isa = PBXBuildFile; fileRef = BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */; };
-		A1F2BEC83079EFE800DF3DC5 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,9 +52,9 @@
 		A19A4B6E306D94E2006F443A /* AboutUsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutUsView.swift; sourceTree = "<group>"; };
 		A19A4B70306D94F1006F443A /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
 		A19A4B72306DA9FB006F443A /* ReadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingView.swift; sourceTree = "<group>"; };
+		A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
 		BA55BEFF3079B1560005FF58 /* PulseSignalProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseSignalProcess.swift; sourceTree = "<group>"; };
 		BA55BF013079E92E0005FF58 /* PPG_Testing1RGB.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = PPG_Testing1RGB.csv; sourceTree = "<group>"; };
-		A1F2BEC73079EFDC00DF3DC5 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,13 +104,13 @@
 				A19A4B68306C37A9006F443A /* HomeView.swift */,
 				A19A4B66306C3447006F443A /* CameraManager.swift */,
 				A19A4B64306C31B8006F443A /* CameraView.swift */,
+				37B6C4093092780400379B57 /* PastReadingsView.swift */,
 				A19A4B72306DA9FB006F443A /* ReadingView.swift */,
 				07CF7B01305869D9007EF444 /* ID_PPGApp.swift */,
 				07CF7B03305869D9007EF444 /* Persistence.swift */,
 				07CF7B04305869D9007EF444 /* Assets.xcassets */,
 				07CF7B06305869D9007EF444 /* ID_PPG.xcdatamodeld */,
 				07CF7B08305869D9007EF444 /* Info.plist */,
-				37B6C4093092780400379B57 /* PastReadingsView.swift */,
 			);
 			path = "ID PPG";
 			sourceTree = "<group>";
@@ -170,7 +170,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1420;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					07CF7AAC305869D7007EF444 = {
 						CreatedOnToolsVersion = 14.2;
@@ -236,7 +236,6 @@
 				A19A4B73306DA9FB006F443A /* ReadingView.swift in Sources */,
 				A19A4B67306C345D006F443A /* CameraManager.swift in Sources */,
 				37B6C40A3092780400379B57 /* PastReadingsView.swift in Sources */,
-				BA55BF04307C49CA0005FF58 /* PulseSignalProcess.swift in Sources */,
 				07CF7B13305869D9007EF444 /* Persistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -267,7 +266,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LWLF83REEU;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ID PPG/Info.plist";
@@ -302,7 +300,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LWLF83REEU;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ID PPG/Info.plist";
@@ -334,6 +331,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -364,8 +362,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = LWLF83REEU;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -385,6 +385,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -394,6 +395,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -424,8 +426,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = LWLF83REEU;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -438,6 +442,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -450,8 +455,8 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LWLF83REEU;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meiotic.ppg.ID-PPGTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -468,8 +473,8 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LWLF83REEU;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meiotic.ppg.ID-PPGTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";

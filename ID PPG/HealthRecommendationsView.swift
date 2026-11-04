@@ -10,6 +10,7 @@ struct HealthRecommendationsView: View {
             NavigationLink {
                 ResultsView(
                     averageBPM: 60,
+                    confidencePCT: 99.9,
                     finalPPGWaveform: []
                 )
             } label: {

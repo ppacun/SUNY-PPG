@@ -1,186 +1,514 @@
-//
-//  HomeView.swift
-//  ID PPG
-//
-//  Created by Dylan Gonzalez on 29/9/2026.
-//
-
 import SwiftUI
 
 struct HomeView: View {
-
-    @State private var path = NavigationPath()
+    
     @State private var showSettings = false
-
-    @AppStorage("patientAge") private var patientAge = 18.0
-    @AppStorage("activityLevel") private var activityLevel = "None"
-
+    
+    @AppStorage("patientAge")
+    private var patientAge = 18.0
+    
+    @AppStorage("activityLevel")
+    private var activityLevel = "None"
+    
     var body: some View {
-
-        NavigationStack(path: $path) {
-
+        
+        NavigationStack {
+            
             ZStack(alignment: .topTrailing) {
-
-                // MAIN HOME PAGE
-                VStack(spacing: 30) {
-
-                    Spacer()
-
-                    Text("vablet cPPG")
-                        .font(.system(size: 50))
-                        .bold()
-
-                    Spacer()
-
+                
+                VStack(spacing: 28) {
+                    
+                    // MARK: - Header
+                    
+                    VStack(spacing: 6) {
+                        
+                        Text("Heart Rate")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Measure your pulse using your iPhone camera.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    
+                    // MARK: - Take Heart Rate
+                    
                     NavigationLink {
                         ReadingView()
                     } label: {
-                        Text("Take Heart Rate")
-                            .font(.largeTitle)
-                            .foregroundStyle(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(.gray)
-                            .clipShape(RoundedRectangle(cornerRadius: 25))
-                    }
-                    .padding(.horizontal, 40)
-
-                    NavigationLink {
-                        PastReadingsView()
-                    } label: {
-
-                        Text("My Past Readings")
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                            .padding()
-                            .frame(width: 250, height: 80)
-                            .background(.gray)
-                            .clipShape(
-                                RoundedRectangle(cornerRadius: 25)
+                        
+                        HStack(spacing: 10) {
+                            
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.white)
+                            
+                            Text("Take Heart Rate")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 58)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 16,
+                                style: .continuous
                             )
+                            .fill(Color.red)
+                        )
                     }
-                    .padding(.horizontal, 40)
-
-                    NavigationLink {
-                        HealthRecommendationsView()
-                    } label: {
-                        Text("Health\nRecommendations")
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .frame(width: 250, height: 80)
-                            .background(.gray)
-                            .clipShape(RoundedRectangle(cornerRadius: 25))
+                    .buttonStyle(.plain)
+                    
+                    
+                    // MARK: - Main Options
+                    
+                    VStack(spacing: 14) {
+                        
+                        NavigationLink {
+                            PastReadingsView()
+                        } label: {
+                            
+                            MainGrayButton(
+                                icon: "chart.xyaxis.line",
+                                title: "Past Readings",
+                                subtitle: "View your previous measurements"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        
+                        
+                        NavigationLink {
+                            HealthRecommendationsView()
+                        } label: {
+                            
+                            MainGrayButton(
+                                icon: "heart.text.clipboard",
+                                title: "Health Recommendations",
+                                subtitle: "Learn about your results"
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 40)
-                
-                    Spacer()
-
-                    HStack(spacing: 20) {
-
+                    
+                    
+                    // MARK: - Information
+                    
+                    VStack(spacing: 0) {
+                        
                         NavigationLink {
                             AboutUsView()
                         } label: {
-                            Text("About us")
+                            
+                            SimpleRow(
+                                icon: "info.circle",
+                                title: "About"
+                            )
                         }
-
-                        Text("•")
-
-                        Link(
-                            "vablet",
-                            destination: URL(string: "https://vablet.com")!
-                        )
-
-                        Text("•")
-
+                        .buttonStyle(.plain)
+                        
+                        
+                        Divider()
+                        
+                        
                         NavigationLink {
                             HowItWorksView()
                         } label: {
-                            Text("How it works")
+                            
+                            SimpleRow(
+                                icon: "questionmark.circle",
+                                title: "How It Works"
+                            )
                         }
+                        .buttonStyle(.plain)
+                        
+                        
+                        Divider()
+                        
+                        
+                        Link(
+                            destination: URL(
+                                string: "https://vablet.com"
+                            )!
+                        ) {
+                            
+                            SimpleRow(
+                                icon: "safari",
+                                title: "Visit Vablet",
+                                external: true
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.gray)
-                    .padding(.bottom)
+                    .background(
+                        Color.secondary.opacity(0.12)
+                    )
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: 16,
+                            style: .continuous
+                        )
+                    )
+                    
+                    
+                    
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 30)
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: .infinity
                 )
-
-             
+                
+                
+                // MARK: - Settings Overlay
+                
                 if showSettings {
-
-                    VStack(alignment: .leading, spacing: 12) {
-
-                        HStack {
-
-                            Text("Settings")
-                                .font(.headline)
-                                .bold()
-
-                            Spacer()
-
-                            Button {
+                    
+                    Color.black.opacity(0.001)
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            
+                            withAnimation(
+                                .spring(
+                                    response: 0.35,
+                                    dampingFraction: 0.82
+                                )
+                            ) {
                                 showSettings = false
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .foregroundStyle(.primary)
                             }
                         }
-
-                        Divider()
-
-                            Text("Age: \(Int(patientAge))")
-                                .font(.subheadline)
-
-                            Slider(
-                                value: $patientAge,
-                                in: 0...100,
-                                step: 1
+                    
+                    
+                    settingsPanel
+                        .transition(
+                            .scale(
+                                scale: 0.95,
+                                anchor: .topTrailing
                             )
-                        Text("What is your activity level?")
-                              .font(.subheadline)
-
-                          Picker("Activity Level", selection: $activityLevel) {
-                              Text("None").tag("None")
-                              Text("Light").tag("Light")
-                              Text("Atheltic").tag("Atheltic")
-                          }
-                          .pickerStyle(.segmented)
-
-                        Text(
-                            "Information stays on the device and is only used compare results to population"
+                            .combined(with: .opacity)
                         )
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    }
-                    .padding()
-                    .frame(width: 220)
-                    .background(.thinMaterial)
-                    .clipShape(
-                        RoundedRectangle(cornerRadius: 15)
-                    )
-                    .shadow(radius: 8)
-                    .padding(.top, 5)
-                    .padding(.trailing, 10)
+                        .padding(.trailing, 12)
+                        .padding(.top, 6)
                 }
             }
-
             
-
+            .navigationTitle("vablet cPPG")
+            .navigationBarTitleDisplayMode(.inline)
+            
             .toolbar {
                 
+
                 ToolbarItem(placement: .navigationBarTrailing) {
 
+
                     Button {
-                        showSettings.toggle()
+                        
+                        withAnimation(
+                            .spring(
+                                response: 0.35,
+                                dampingFraction: 0.82
+                            )
+                        ) {
+                            showSettings.toggle()
+                        }
+                        
                     } label: {
+                        
                         Image(systemName: "gearshape")
+                            .foregroundStyle(.red)
                     }
                 }
             }
         }
+    }
+    
+    
+    // MARK: - Settings
+    
+    private var settingsPanel: some View {
+        
+        VStack(
+            alignment: .leading,
+            spacing: 12
+        ) {
+            
+            // MARK: - Header
+            
+            HStack {
+                
+                HStack(spacing: 6) {
+                    
+                    Image(systemName: "gearshape.fill")
+                        .foregroundStyle(.red)
+                    
+                    Text("Settings")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    
+                    withAnimation(
+                        .spring(
+                            response: 0.3,
+                            dampingFraction: 0.8
+                        )
+                    ) {
+                        showSettings = false
+                    }
+                    
+                } label: {
+                    
+                    Image(systemName: "xmark")
+                        .font(
+                            .system(
+                                size: 11,
+                                weight: .bold
+                            )
+                        )
+                        .foregroundStyle(.primary)
+                        .frame(
+                            width: 26,
+                            height: 26
+                        )
+                        .background(
+                            Color.secondary.opacity(0.12)
+                        )
+                        .clipShape(Circle())
+                }
+            }
+            
+            
+            Divider()
+                .opacity(0.35)
+            
+            
+            // MARK: - Age
+            
+            VStack(
+                alignment: .leading,
+                spacing: 6
+            ) {
+                
+                HStack {
+                    
+                    Text("Age")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    Text("\(Int(patientAge))")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+                
+                
+                Slider(
+                    value: $patientAge,
+                    in: 0...100,
+                    step: 1
+                )
+                .tint(.red)
+            }
+            
+            
+            // MARK: - Activity Level
+            
+            VStack(
+                alignment: .leading,
+                spacing: 6
+            ) {
+                
+                Text("Activity Level")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                
+                Picker(
+                    "Activity Level",
+                    selection: $activityLevel
+                ) {
+                    
+                    Text("None")
+                        .tag("None")
+                    
+                    Text("Light")
+                        .tag("Light")
+                    
+                    Text("Athletic")
+                        .tag("Athletic")
+                }
+                .pickerStyle(.segmented)
+            }
+            
+            
+            Divider()
+                .opacity(0.35)
+            
+            
+            // MARK: - Privacy
+            
+            HStack(
+                alignment: .top,
+                spacing: 6
+            ) {
+                
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                
+                Text(
+                    "Your information stays on this device."
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+        
+        .padding(14)
+        
+        // Smaller popup
+        .frame(width: 250)
+        
+        // Works in Light + Dark Mode
+        .background(
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+            .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        
+        // Subtle glass-like border
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: 22,
+                style: .continuous
+            )
+            .stroke(
+                Color.primary.opacity(0.08),
+                lineWidth: 1
+            )
+        )
+        
+        // Floating effect
+        .shadow(
+            color: Color.black.opacity(0.15),
+            radius: 16,
+            x: 0,
+            y: 8
+        )
+    }
+}
+
+// MARK: - Main Gray Button
+
+private struct MainGrayButton: View {
+
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+
+        HStack(spacing: 14) {
+
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.red)
+
+
+            VStack(
+                alignment: .center,
+                spacing: 3
+            ) {
+
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+
+            Image(systemName: "chevron.right")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+        }
+
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .frame(minHeight: 74)
+
+        .background(
+            Color.secondary.opacity(0.12)
+        )
+
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: 16,
+                style: .continuous
+            )
+        )
+
+        .contentShape(Rectangle())
+    }
+}
+
+
+// MARK: - Information Row
+
+private struct SimpleRow: View {
+
+    let icon: String
+    let title: String
+
+    var external = false
+
+    var body: some View {
+
+        HStack(spacing: 12) {
+
+            Image(systemName: icon)
+                .foregroundStyle(.red)
+
+
+            Text(title)
+                .foregroundStyle(.primary)
+
+
+            Spacer()
+
+
+            Image(
+                systemName:
+                    external
+                    ? "arrow.up.right"
+                    : "chevron.right"
+            )
+            .font(.caption.bold())
+            .foregroundStyle(.secondary)
+        }
+
+        .padding(.horizontal, 16)
+        .frame(minHeight: 52)
+        .contentShape(Rectangle())
     }
 }

@@ -333,3 +333,28 @@ struct PastReadingsView_Previews: PreviewProvider {
         }
     }
 }
+// MARK: - Heart Rate Range
+
+private func heartRange(
+    age: Int
+) -> ClosedRange<Int> {
+
+    switch age {
+
+    case 0:
+        return 80...160
+
+    case 1...2:
+        return 80...130
+
+    case 3...5:
+        return 80...110
+
+    case 6...12:
+        return 70...100
+
+    default:
+        return 60...100
+    }
+}
+

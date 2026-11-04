@@ -478,7 +478,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         do {
             try device.lockForConfiguration()
 
-            try device.setTorchModeOn(level: 0.25)
+            try device.setTorchModeOn(level: 1)
 
             device.unlockForConfiguration()
 

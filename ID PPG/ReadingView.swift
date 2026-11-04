@@ -39,30 +39,6 @@ struct ReadingView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 20) {  //left is top Right is bottom, top is left, +90 deg
-                let LVR = (camera.topRed > minRVal)
-                let RVR = (camera.bottomRed > minRVal)
-                let TVR = (camera.leftRed > minRVal)
-                let CVR = (camera.centerRed > minRVal)
-                let BVR = (camera.rightRed + 10 > minRVal)
-                let LVB = (camera.topBlue < maxBVal)
-                let RVB = (camera.bottomBlue < maxBVal)
-                let TVB = (camera.leftBlue < maxBVal)
-                let CVB = (camera.centerBlue < maxBVal)
-                let BVB = (camera.rightBlue < maxBVal)
-                let LVG = (camera.topGreen < maxGVal)
-                let RVG = (camera.bottomGreen < maxGVal)
-                let TVG = (camera.leftGreen < maxGVal)
-                let CVG = (camera.centerGreen < maxGVal)
-                let BVG = (camera.rightGreen < maxGVal)
-                let LF = LVR && LVB && LVG
-                let RF = RVR && RVB && RVG
-                let CF = CVR && CVB && CVG
-                let TF = TVR && TVG && TVB
-                let BF = BVR && BVB && BVG
-                let fingerDetected = CF && BF && TF && RF && LF
-                
-                
-                    
                     VStack(spacing: 20) {  //left is top Right is bottom, top is left, +90 deg
                         let LVR = (camera.topRed > minRVal)
                         let RVR = (camera.bottomRed > minRVal)
@@ -104,6 +80,8 @@ struct ReadingView: View {
                                     .font(.title2)
                                     .bold()
                                     
+                                    Text("reading may not be stable till reading complete")
+                                        .font(.caption)
                                     WaveformShape(points: ecgWave.points)
                                         .stroke(
                                             Color.red,
@@ -204,7 +182,7 @@ struct ReadingView: View {
                             Text("Move Finger Right")
                                 .font(.largeTitle)
                                 .bold()
-                        } else {
+                        }else {
                             
                             Text("Please place finger over camera")
                                 .font(.largeTitle)
@@ -322,28 +300,7 @@ struct ReadingView: View {
                                     secondsRemaining = readTime
                                 }
                             }
-                        /* Text(
-                         "TOP RGB(\(camera.leftRed), \(camera.leftGreen), \(camera.leftBlue))"
-                         )
-                         .font(.title3)
-                         .fontWeight(.bold)
-                         Text(
-                         "left RGB(\(camera.topRed), \(camera.topGreen), \(camera.topBlue))"
-                         + "Center RGB(\(camera.centerRed), \(camera.centerGreen), \(camera.centerBlue))"
-                         + "right RGB(\(camera.bottomRed), \(camera.bottomGreen), \(camera.bottomBlue))"
-                         )
-                         .font(.system(size: 10))
-                         .fontWeight(.bold)
-                         Text(
-                         "Bottom RGB(\(camera.rightRed), \(camera.rightGreen), \(camera.rightBlue))"
-                         )
-                         .font(.title3)
-                         .fontWeight(.bold)
-                         if let url = camera.lastCSVURL {
-                         ShareLink(item: url) {
-                         Text("Share Last Reading CSV")
-                         }
-                         }*/
+                    
                         Text("Please remain still")
                             .foregroundStyle(.secondary)
                     }
@@ -369,7 +326,7 @@ struct ReadingView: View {
                     .navigationDestination(isPresented: $showResults) {
                         ResultsView(
                             averageBPM: averageBPM,
-                            confidencePCT: 99.9
+                            confidencePCT: 99.9,
                             //path: $path
                             finalPPGWaveform: finalPPGWaveform
                         )
