@@ -9,13 +9,28 @@ import SwiftUI
 
 struct ResultsView: View {
     let averageBPM: Double?
+    let confidencePCT: Double
     let finalPPGWaveform: [Double]
 
     @StateObject private var camera = CameraManager()
     @AppStorage("patientAge") private var patientAge = 18.0
+    @State private var showSaveSheet = false
+    @State private var showPastReadings = false
+    
     var body: some View {
         NavigationStack() {
             VStack(spacing: 20) {
+                Text(rangeMessage(patientAge, averageBPM))
+                    .font(.largeTitle)
+                    .foregroundStyle(rangeColor(patientAge, averageBPM))
+                    .multilineTextAlignment(.center)
+                Text("Based on a population average")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                StaticHeartbeatWave(bpm: averageBPM)
+                HStack(){
+                    HStack(alignment: .lastTextBaseline, spacing: 6) {
                 
                 VStack(spacing: 10) {
                     Text("Heart Rate Result")
@@ -83,6 +98,8 @@ struct ResultsView: View {
                 .padding(.horizontal, 20)
                
                 Spacer()
+                Button {
+                    showSaveSheet = true
               
                 NavigationLink {
                     PastReadingsView()
@@ -102,9 +119,8 @@ struct ResultsView: View {
                             .fill(Color.red)
                     )
                 }
-                .padding(.horizontal, 20)
-
-               
+                .disabled(averageBPM == nil)
+                .padding(.horizontal, 40)
                 NavigationLink {
                     HomeView()
                         .navigationBarBackButtonHidden()
@@ -124,20 +140,35 @@ struct ResultsView: View {
                             .stroke(Color.gray.opacity(0.5), lineWidth: 1.5)
                     )
                 }
-                .padding(.horizontal, 20)
-
+                .padding(.horizontal, 40)
+            }
+            .sheet(isPresented: $showSaveSheet) {
+                if let bpm = averageBPM {
+                    SaveReadingSheet(bpm: bpm) { activity, date in
+                        ReadingStore.shared.add(
+                            bpm: bpm,
+                            confidence: confidencePCT,
+                            activity: activity,
+                            date: date
+                        )
+                        showPastReadings = true
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showPastReadings) {
+                PastReadingsView()
             }
         }
         .padding()
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 NavigationLink {
                     HomeView().navigationBarBackButtonHidden()
                 } label: {
                     HStack {
                         Image(systemName: "chevron.left")
-                        
+
                     }
                 }
             }
@@ -216,6 +247,7 @@ struct ResultsView_Previews: PreviewProvider {
         NavigationStack {
             ResultsView(
                 averageBPM: 72,
+                confidencePCT: 99.9
                 finalPPGWaveform: []
             )
         }
@@ -231,21 +263,19 @@ func heartRange(age: Int) -> ClosedRange<Int> {
         return 80...160
 
     case 1...2:
- 
+
         return 80...130
 
     case 3...5:
-     
+
         return 80...110
 
     case 6...12:
-       
+
         return 70...100
 
     default:
-        
+
         return 60...100
     }
 }
-
-    

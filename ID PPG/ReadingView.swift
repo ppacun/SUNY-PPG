@@ -369,6 +369,8 @@ struct ReadingView: View {
                     .navigationDestination(isPresented: $showResults) {
                         ResultsView(
                             averageBPM: averageBPM,
+                            confidencePCT: 99.9
+                            //path: $path
                             finalPPGWaveform: finalPPGWaveform
                         )
                     }

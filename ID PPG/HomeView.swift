@@ -172,7 +172,7 @@ struct HomeView: View {
 
             .toolbar {
                 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
 
                     Button {
                         showSettings.toggle()
