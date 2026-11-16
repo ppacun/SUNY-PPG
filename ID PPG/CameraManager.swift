@@ -352,6 +352,43 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         let bottomY = (height * 3) / 4
 
         let buffer = baseAddress.assumingMemoryBound(to: UInt8.self)
+        
+        //isntead of looking at five individual pixels, i'll try to look at five regions of pixels. that way the camera will collect more information
+        func averageRegion(centerX: Int, centerY: Int, radius: Int = 10)
+            -> (red: Double, green: Double, blue: Double) {
+
+            var redSum = 0.0
+            var greenSum = 0.0
+            var blueSum = 0.0
+            var count = 0
+
+            // Stay within the camera frame boundaries.
+            let minX = max(0, centerX - radius)
+            let maxX = min(width - 1, centerX + radius)
+            let minY = max(0, centerY - radius)
+            let maxY = min(height - 1, centerY + radius)
+
+            for y in minY...maxY {
+                for x in minX...maxX {
+                    let index = y * bytesPerRow + x * 4
+
+                    // Camera pixel format: BGRA
+                    blueSum += Double(buffer[index])
+                    greenSum += Double(buffer[index + 1])
+                    redSum += Double(buffer[index + 2])
+                    count += 1
+                }
+            }
+
+            let total = Double(count)
+
+            return (
+                red: redSum / total,
+                green: greenSum / total,
+                blue: blueSum / total
+            )
+        }
+        //end of addition for region pixel. we were looking at 5 pixels per frame before now 2205 pixel camples across 5 regions
 
         func pixelIndex(x: Int, y: Int) -> Int {
             return y * bytesPerRow + x * 4
@@ -398,29 +435,27 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         let bottomBlueValue = buffer[bottomPixelIndex]
         let bottomGreenValue = buffer[bottomPixelIndex + 1]
         let bottomRedValue = buffer[bottomPixelIndex + 2]
-        let avgR = (
-            Int(centerRedValue) +
-            Int(leftRedValue) +
-            Int(rightRedValue) +
-            Int(topRedValue) +
-            Int(bottomRedValue)
-        ) / 5
+        
+        //replaced with the letAvg sections bceause avgR represented the average of five red pixels now avgR represents the average of 2205 red pixels
+        let centerRegion = averageRegion(centerX: centerX, centerY: centerY)
+        let leftRegion = averageRegion(centerX: leftX, centerY: centerY)
+        let rightRegion = averageRegion(centerX: rightX, centerY: centerY)
+        let topRegion = averageRegion(centerX: centerX, centerY: topY)
+        let bottomRegion = averageRegion(centerX: centerX, centerY: bottomY)
 
-        let avgG = (
-            Int(centerGreenValue) +
-            Int(leftGreenValue) +
-            Int(rightGreenValue) +
-            Int(topGreenValue) +
-            Int(bottomGreenValue)
-        ) / 5
+        //combine the five regions
+        let avgR = Int((centerRegion.red + leftRegion.red +
+                        rightRegion.red + topRegion.red +
+                        bottomRegion.red) / 5.0)
 
-        let avgB = (
-            Int(centerBlueValue) +
-            Int(leftBlueValue) +
-            Int(rightBlueValue) +
-            Int(topBlueValue) +
-            Int(bottomBlueValue)
-        ) / 5
+        let avgG = Int((centerRegion.green + leftRegion.green +
+                        rightRegion.green + topRegion.green +
+                        bottomRegion.green) / 5.0)
+
+        let avgB = Int((centerRegion.blue + leftRegion.blue +
+                        rightRegion.blue + topRegion.blue +
+                        bottomRegion.blue) / 5.0)
+        //end of addition
 
         CVPixelBufferUnlockBaseAddress(
             pixelBuffer,
