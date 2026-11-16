@@ -1,3 +1,9 @@
+//
+//  CameraView.swift
+//  ID PPG
+//
+//  Created by Dylan Gonzalez on 29/9/2026.
+//
 import SwiftUI
 
 struct HomeView: View {
@@ -6,10 +12,11 @@ struct HomeView: View {
     
     @AppStorage("patientAge")
     private var patientAge = 18.0
-    
+    @State private var showTestResults = false
     @AppStorage("activityLevel")
     private var activityLevel = "None"
-    
+    @AppStorage("neverShowWarning")
+    private var neverShowWarning = false
     var body: some View {
         
         NavigationStack {
@@ -27,6 +34,12 @@ struct HomeView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
+                            .onTapGesture {
+                                neverShowWarning = false
+                            }
+                            .onTapGesture(count: 3) {
+                                   showTestResults = true
+                               }
                         
                         Text("Measure your pulse using your iPhone camera.")
                             .font(.subheadline)

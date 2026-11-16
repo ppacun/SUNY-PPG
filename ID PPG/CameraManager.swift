@@ -1,3 +1,9 @@
+//
+//  CameraView.swift
+//  ID PPG
+//
+//  Created by Dylan Gonzalez on 29/9/2026.
+//
 import AVFoundation
 
 class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -513,7 +519,7 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         do {
             try device.lockForConfiguration()
 
-            try device.setTorchModeOn(level: 1)
+            try device.setTorchModeOn(level: 0.25)
 
             device.unlockForConfiguration()
 

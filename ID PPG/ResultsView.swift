@@ -1,3 +1,9 @@
+//
+//  CameraView.swift
+//  ID PPG
+//
+//  Created by Dylan Gonzalez on 29/9/2026.
+//
 import SwiftUI
 
 struct ResultsView: View {
@@ -306,7 +312,7 @@ struct ResultsView: View {
                 SaveReadingSheet(
                     bpm: bpm
                 ) { activity, date in
-
+                    
                     ReadingStore.shared.add(
                         bpm: bpm,
                         confidence:

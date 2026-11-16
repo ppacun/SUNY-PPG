@@ -1,3 +1,9 @@
+//
+//  CameraView.swift
+//  ID PPG
+//
+//  Created by Dylan Gonzalez on 29/9/2026.
+//
 import SwiftUI
 import AudioToolbox
 import Combine
@@ -24,16 +30,22 @@ struct ReadingView: View {
     @State private var bpmValuesThisReading: [Double] = []
     @State private var finalPPGWaveform: [Double] = []
 
+    @State private var showRGBValues = false
+    @State private var rgbDisplayTask: DispatchWorkItem?
     @AppStorage("neverShowWarning")
     private var neverShowWarning = false
 
     private let minRVal = 110//140
     private let maxBVal = 70
-    private let maxGVal = 130
+    private let maxGVal = 130// G > 40 pushing to hard.
 
     private let readTime = 60
     private let readingDuration: TimeInterval = 60
-
+    
+    
+    private var pressingTooHard: Bool {
+        fingerDetected && camera.centerGreen > 40
+    }
 
     // MARK: - Average BPM
 
@@ -46,7 +58,9 @@ struct ReadingView: View {
         return bpmValuesThisReading.reduce(0, +)
             / Double(bpmValuesThisReading.count)
     }
-
+    private var validMeasurementPosition: Bool {
+        fingerDetected && !pressingTooHard
+    }
 
     // MARK: - Signal Quality
 
@@ -133,7 +147,10 @@ struct ReadingView: View {
     // MARK: - Guidance
 
     private var guidanceIcon: String {
-
+        if pressingTooHard {
+               return "hand.raised.fill"
+           }
+        
         if fingerDetected {
             return isReading
                 ? "waveform.path.ecg"
@@ -189,6 +206,9 @@ struct ReadingView: View {
 
 
     private var guidanceTitle: String {
+        if pressingTooHard {
+                return "Reduce Finger Pressure"
+            }
 
         if fingerDetected {
 
@@ -208,6 +228,9 @@ struct ReadingView: View {
 
 
     private var guidanceText: String {
+        if pressingTooHard {
+                return "Lighten the pressure on the camera while keeping it fully covered."
+            }
 
         if fingerDetected {
 
@@ -436,7 +459,6 @@ struct ReadingView: View {
                     height: 284
                 )
 
-
             if isReading {
 
                 Circle()
@@ -464,7 +486,6 @@ struct ReadingView: View {
                     )
             }
 
-
             CameraView(
                 session: camera.session
             )
@@ -473,7 +494,6 @@ struct ReadingView: View {
                 height: 260
             )
             .clipShape(Circle())
-
 
             Circle()
                 .stroke(
@@ -487,8 +507,52 @@ struct ReadingView: View {
                     height: 260
                 )
 
+            if showRGBValues {
 
-            if isReading {
+                VStack(spacing: 5) {
+
+                    Text("RGB")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            .white.opacity(0.8)
+                        )
+
+                    Text(
+                        "R: \(Int(camera.centerRed))"
+                    )
+                    .foregroundStyle(.red)
+
+                    Text(
+                        "G: \(Int(camera.centerGreen))"
+                    )
+                    .foregroundStyle(.green)
+
+                    Text(
+                        "B: \(Int(camera.centerBlue))"
+                    )
+                    .foregroundStyle(.blue)
+                }
+                .font(
+                    .system(
+                        size: 22,
+                        weight: .bold,
+                        design: .rounded
+                    )
+                )
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(
+                    Color.black.opacity(0.55)
+                )
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: 16,
+                        style: .continuous
+                    )
+                )
+
+            } else if isReading {
 
                 VStack(spacing: 2) {
 
@@ -519,6 +583,10 @@ struct ReadingView: View {
                         )
                 }
             }
+        }
+        .contentShape(Circle())
+        .onTapGesture {
+            showCurrentRGBValues()
         }
         .accessibilityElement(
             children: .combine
@@ -909,7 +977,7 @@ struct ReadingView: View {
 
 
         let detected =
-            fingerDetected
+            validMeasurementPosition
 
 
         if detected {
@@ -1092,6 +1160,32 @@ struct ReadingView: View {
         finalPPGWaveform = []
 
         lastFingerDetectedTime = nil
+    }
+    private func showCurrentRGBValues() {
+
+        rgbDisplayTask?.cancel()
+
+        withAnimation(
+            .easeInOut(duration: 0.15)
+        ) {
+            showRGBValues = true
+        }
+
+        let task = DispatchWorkItem {
+
+            withAnimation(
+                .easeInOut(duration: 0.2)
+            ) {
+                showRGBValues = false
+            }
+        }
+
+        rgbDisplayTask = task
+
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + 2.5,
+            execute: task
+        )
     }
 }
 
