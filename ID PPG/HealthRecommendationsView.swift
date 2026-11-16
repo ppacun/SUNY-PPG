@@ -1,9 +1,3 @@
-//
-//  CameraView.swift
-//  ID PPG
-//
-//  Created by Dylan Gonzalez on 29/9/2026.
-//
 import SwiftUI
 
 struct HealthRecommendationsView: View {
@@ -13,16 +7,22 @@ struct HealthRecommendationsView: View {
     @AppStorage("patientAge")
     private var patientAge = 18.0
 
+    @AppStorage("activityLevel")
+    private var userActivityLevel = "None"
+
     @State private var showStatusInfo = false
 
 
     // MARK: - Health Flags
 
     private struct HealthFlags {
+
         var rising = false
         var declining = false
+
         var unusuallyHigh = false
         var unusuallyLow = false
+
         var highEnd = false
         var lowEnd = false
     }
@@ -31,16 +31,23 @@ struct HealthRecommendationsView: View {
     // MARK: - Sorted Readings
 
     private var sortedReadings: [SavedReading] {
+
         store.readings.sorted {
             $0.date < $1.date
         }
     }
 
+
+    // MARK: - Latest Reading
+
     private var latestReading: SavedReading? {
+
         sortedReadings.last
     }
 
+
     private var latestActivity: ReadingActivity {
+
         latestReading?.activity ?? .none
     }
 
@@ -48,22 +55,28 @@ struct HealthRecommendationsView: View {
     // MARK: - Separate By Activity
 
     private var restingReadings: [SavedReading] {
+
         sortedReadings.filter {
             $0.activity == .none
         }
     }
 
+
     private var lightReadings: [SavedReading] {
+
         sortedReadings.filter {
             $0.activity == .light
         }
     }
 
+
     private var heavyReadings: [SavedReading] {
+
         sortedReadings.filter {
             $0.activity == .heavy
         }
     }
+
 
     private var relevantReadings: [SavedReading] {
 
@@ -93,15 +106,43 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Latest Values
+    // MARK: - Average BPM
 
-    private var latestBPM: Double? {
-        latestReading?.bpm
+    private var averageBPM: Double? {
+
+        guard !relevantReadings.isEmpty else {
+            return nil
+        }
+
+        let total =
+            relevantReadings
+                .map { $0.bpm }
+                .reduce(0, +)
+
+        return total /
+            Double(relevantReadings.count)
     }
 
-    private var latestConfidence: Double? {
-        latestReading?.confidence
+
+    // MARK: - Average Signal Confidence
+
+    private var averageConfidence: Double? {
+
+        guard !relevantReadings.isEmpty else {
+            return nil
+        }
+
+        let total =
+            relevantReadings
+                .map { $0.confidence }
+                .reduce(0, +)
+
+        return total /
+            Double(relevantReadings.count)
     }
+
+
+    // MARK: - Activity Name
 
     private var activityDisplayName: String {
 
@@ -126,10 +167,9 @@ struct HealthRecommendationsView: View {
         currentFlags.rising ||
         currentFlags.declining ||
         currentFlags.unusuallyHigh ||
-        currentFlags.unusuallyLow ||
-        currentFlags.highEnd ||
-        currentFlags.lowEnd
+        currentFlags.unusuallyLow
     }
+
 
     private var overallStatus: String {
 
@@ -142,38 +182,60 @@ struct HealthRecommendationsView: View {
             : "Healthy"
     }
 
+
     private var overallMessage: String {
 
         guard !store.readings.isEmpty else {
+
             return "Save a reading to begin receiving insights."
         }
 
         if currentFlags.unusuallyHigh {
+
             return "Your latest reading was higher than most similar readings."
         }
 
         if currentFlags.unusuallyLow {
+
             return "Your latest reading was lower than most similar readings."
         }
 
         if currentFlags.rising {
+
             return "Your recent readings show an upward trend."
         }
 
         if currentFlags.declining {
+
+            if latestActivity == .none {
+
+                if userActivityLevel == "Athletic" {
+
+                    return "Your resting heart rate is trending lower, which can occur with regular athletic conditioning."
+                }
+
+                if userActivityLevel == "Light" {
+
+                    return "Your resting heart rate is trending lower, which may occur with consistent activity."
+                }
+            }
+
             return "Your recent readings show a downward trend."
         }
 
         if currentFlags.highEnd {
-            return "Your latest reading is near the high end of its expected range."
+
+            return "Healthy, but your average is near the high end of its expected range."
         }
 
         if currentFlags.lowEnd {
-            return "Your latest reading is near the low end of its expected range."
+
+            return "Healthy, but your average is near the low end of its expected range."
         }
 
         return "No current trends require attention."
     }
+
 
     private var overallColor: Color {
 
@@ -206,6 +268,7 @@ struct HealthRecommendationsView: View {
         return "Stable"
     }
 
+
     private var trendColor: Color {
 
         if relevantReadings.count < 4 {
@@ -222,7 +285,39 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Compared With History
+    // MARK: - Trend Activity Note
+
+    private var trendActivityNote: String? {
+
+        guard
+            latestActivity == .none,
+            currentFlags.declining
+        else {
+            return nil
+        }
+
+        switch userActivityLevel {
+
+        case "Light":
+
+            return """
+            Your resting heart rate is trending lower. Since you regularly perform light activity, a lower resting heart rate may be a normal response to consistent activity.
+            """
+
+        case "Athletic":
+
+            return """
+            Your resting heart rate is trending lower. Since you have an athletic activity level, a lower resting heart rate may occur with regular cardiovascular conditioning.
+            """
+
+        default:
+
+            return nil
+        }
+    }
+
+
+    // MARK: - History Comparison
 
     private var historyComparisonText: String {
 
@@ -240,6 +335,7 @@ struct HealthRecommendationsView: View {
 
         return "Typical"
     }
+
 
     private var historyComparisonColor: Color {
 
@@ -261,7 +357,7 @@ struct HealthRecommendationsView: View {
 
     private var rangePositionText: String {
 
-        guard latestReading != nil else {
+        guard averageBPM != nil else {
             return "--"
         }
 
@@ -276,9 +372,10 @@ struct HealthRecommendationsView: View {
         return "Middle"
     }
 
+
     private var rangePositionColor: Color {
 
-        guard latestReading != nil else {
+        guard averageBPM != nil else {
             return .secondary
         }
 
@@ -326,6 +423,23 @@ struct HealthRecommendationsView: View {
 
         if currentFlags.declining {
 
+            if latestActivity == .none {
+
+                if userActivityLevel == "Athletic" {
+
+                    return """
+                    Your resting heart rate is trending downward. Because you selected an athletic activity level, a lower resting heart rate may occur with regular cardiovascular conditioning. Continue monitoring your readings for consistency.
+                    """
+                }
+
+                if userActivityLevel == "Light" {
+
+                    return """
+                    Your resting heart rate is trending downward. Since you regularly perform light activity, a lower resting heart rate may be a normal response to consistent activity. Continue monitoring future readings.
+                    """
+                }
+            }
+
             return """
             Your recent \(activityDisplayName.lowercased()) heart rate readings show a downward trend. Continue monitoring future readings under similar conditions.
             """
@@ -334,14 +448,30 @@ struct HealthRecommendationsView: View {
         if currentFlags.highEnd {
 
             return """
-            Your latest reading is within its expected range but is near the upper end of that range. Rest, hydration, recent activity, and stress may affect your heart rate.
+            Your average \(activityDisplayName.lowercased()) heart rate is within its expected range but is near the upper end of that range. Rest, hydration, recent activity, and stress may influence your heart rate.
             """
         }
 
         if currentFlags.lowEnd {
 
+            if latestActivity == .none &&
+                userActivityLevel == "Athletic" {
+
+                return """
+                Your average resting heart rate is near the lower end of its expected range. Since you selected an athletic activity level, a lower resting heart rate may occur with regular cardiovascular conditioning.
+                """
+            }
+
+            if latestActivity == .none &&
+                userActivityLevel == "Light" {
+
+                return """
+                Your average resting heart rate is near the lower end of its expected range. Consistent physical activity may contribute to a lower resting heart rate.
+                """
+            }
+
             return """
-            Your latest reading is within its expected range but is near the lower end of that range. Continue monitoring future readings for consistency.
+            Your average \(activityDisplayName.lowercased()) heart rate is within its expected range but is near the lower end of that range. Continue monitoring future readings for consistency.
             """
         }
 
@@ -351,26 +481,42 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Dynamic Recommendations
+    // MARK: - Activity Recommendation
 
     private var activityRecommendation: String {
 
         if currentFlags.unusuallyHigh ||
-            currentFlags.rising ||
-            currentFlags.highEnd {
+            currentFlags.rising {
 
             return "Consider lighter activity and compare your next reading."
         }
 
-        if currentFlags.unusuallyLow ||
-            currentFlags.declining ||
+        if currentFlags.highEnd {
+
+            return "Monitor how your heart rate responds to your current activity level."
+        }
+
+        if currentFlags.declining ||
             currentFlags.lowEnd {
+
+            if userActivityLevel == "Athletic" {
+
+                return "Your lower resting rate may reflect regular athletic conditioning."
+            }
+
+            if userActivityLevel == "Light" {
+
+                return "Your lower resting rate may reflect consistent physical activity."
+            }
 
             return "Maintain comfortable activity and continue monitoring your readings."
         }
 
         return "Maintain your current activity level."
     }
+
+
+    // MARK: - Sleep Recommendation
 
     private var sleepRecommendation: String {
 
@@ -390,6 +536,9 @@ struct HealthRecommendationsView: View {
         return "Continue getting adequate rest and consistent sleep."
     }
 
+
+    // MARK: - Hydration Recommendation
+
     private var hydrationRecommendation: String {
 
         if currentFlags.unusuallyHigh ||
@@ -401,6 +550,9 @@ struct HealthRecommendationsView: View {
 
         return "Continue maintaining normal hydration."
     }
+
+
+    // MARK: - Stress Recommendation
 
     private var stressRecommendation: String {
 
@@ -419,6 +571,9 @@ struct HealthRecommendationsView: View {
 
         return "Continue monitoring your readings under relaxed and consistent conditions."
     }
+
+
+    // MARK: - Mental Wellness Recommendation
 
     private var mentalWellnessRecommendation: String {
 
@@ -473,6 +628,7 @@ struct HealthRecommendationsView: View {
                 Color.black.opacity(0.45)
                     .ignoresSafeArea()
                     .onTapGesture {
+
                         closeStatusInfo()
                     }
 
@@ -480,7 +636,9 @@ struct HealthRecommendationsView: View {
                     .padding(.horizontal, 28)
                     .transition(
                         .scale(scale: 0.95)
-                            .combined(with: .opacity)
+                            .combined(
+                                with: .opacity
+                            )
                     )
             }
         }
@@ -513,7 +671,7 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Overall Status
+    // MARK: - Overall Status Card
 
     private var overallStatusCard: some View {
 
@@ -523,11 +681,20 @@ struct HealthRecommendationsView: View {
         ) {
 
             Image(
-                systemName: "waveform.path.ecg"
+                systemName:
+                    "waveform.path.ecg"
             )
-            .font(.system(size: 30))
-            .foregroundStyle(overallColor)
-            .frame(width: 42)
+            .font(
+                .system(
+                    size: 30
+                )
+            )
+            .foregroundStyle(
+                overallColor
+            )
+            .frame(
+                width: 42
+            )
 
             VStack(
                 alignment: .leading,
@@ -541,7 +708,9 @@ struct HealthRecommendationsView: View {
                 Text(overallStatus)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(overallColor)
+                    .foregroundStyle(
+                        overallColor
+                    )
 
                 Text(overallMessage)
                     .font(.subheadline)
@@ -569,7 +738,8 @@ struct HealthRecommendationsView: View {
             } label: {
 
                 Image(
-                    systemName: "info.circle"
+                    systemName:
+                        "info.circle"
                 )
                 .font(.title2)
                 .foregroundStyle(.blue)
@@ -587,7 +757,7 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Reading Insights
+    // MARK: - Reading Insights Card
 
     private var readingInsightsCard: some View {
 
@@ -599,7 +769,8 @@ struct HealthRecommendationsView: View {
             HStack(spacing: 10) {
 
                 Image(
-                    systemName: "chart.bar.fill"
+                    systemName:
+                        "chart.bar.fill"
                 )
                 .foregroundStyle(.blue)
 
@@ -607,6 +778,7 @@ struct HealthRecommendationsView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
             }
+
 
             VStack(spacing: 0) {
 
@@ -621,10 +793,11 @@ struct HealthRecommendationsView: View {
 
                 Divider()
 
+
                 insightRow(
-                    title: "Heart Rate",
+                    title: "Average Heart Rate",
                     value:
-                        latestBPM.map {
+                        averageBPM.map {
                             "\(Int($0.rounded())) bpm"
                         } ?? "--",
                     color: .primary
@@ -632,40 +805,75 @@ struct HealthRecommendationsView: View {
 
                 Divider()
 
+
                 insightRow(
-                    title: "Signal Confidence",
+                    title: "Average Signal Confidence",
                     value:
-                        latestConfidence.map {
+                        averageConfidence.map {
+
                             String(
-                                format: "%.1f%%",
+                                format:
+                                    "%.1f%%",
                                 $0
                             )
+
                         } ?? "--",
                     color: .primary
                 )
 
                 Divider()
 
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 0
+                ) {
+
+                    insightRow(
+                        title: "Recent Trend",
+                        value: trendText,
+                        color: trendColor
+                    )
+
+                    if let note =
+                        trendActivityNote {
+
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(
+                                .secondary
+                            )
+                            .fixedSize(
+                                horizontal: false,
+                                vertical: true
+                            )
+                            .padding(.horizontal)
+                            .padding(.bottom, 14)
+                    }
+                }
+
+                Divider()
+
+
                 insightRow(
-                    title: "Recent Trend",
-                    value: trendText,
-                    color: trendColor
+                    title:
+                        "Compared With Your History",
+                    value:
+                        historyComparisonText,
+                    color:
+                        historyComparisonColor
                 )
 
                 Divider()
 
-                insightRow(
-                    title: "Compared With Your History",
-                    value: historyComparisonText,
-                    color: historyComparisonColor
-                )
-
-                Divider()
 
                 insightRow(
-                    title: "Range Position",
-                    value: rangePositionText,
-                    color: rangePositionColor
+                    title:
+                        "Range Position",
+                    value:
+                        rangePositionText,
+                    color:
+                        rangePositionColor
                 )
             }
             .background(
@@ -688,7 +896,7 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Recommendation
+    // MARK: - Recommendation Card
 
     private var recommendationCard: some View {
 
@@ -730,7 +938,7 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Next Steps
+    // MARK: - Next Steps Card
 
     private var nextStepsCard: some View {
 
@@ -741,8 +949,11 @@ struct HealthRecommendationsView: View {
 
             HStack(spacing: 10) {
 
-                Image(systemName: "checklist")
-                    .foregroundStyle(.blue)
+                Image(
+                    systemName:
+                        "checklist"
+                )
+                .foregroundStyle(.blue)
 
                 Text("Next Steps")
                     .font(.headline)
@@ -752,42 +963,55 @@ struct HealthRecommendationsView: View {
 
             Divider()
 
+
             nextStepRow(
                 icon: "figure.walk",
                 title: "Activity",
-                text: activityRecommendation
+                text:
+                    activityRecommendation
             )
 
             Divider()
+
 
             nextStepRow(
                 icon: "bed.double.fill",
                 title: "Rest & Sleep",
-                text: sleepRecommendation
+                text:
+                    sleepRecommendation
             )
 
             Divider()
+
 
             nextStepRow(
                 icon: "drop.fill",
                 title: "Hydration",
-                text: hydrationRecommendation
+                text:
+                    hydrationRecommendation
             )
 
             Divider()
 
+
             nextStepRow(
-                icon: "brain.head.profile",
+                icon:
+                    "brain.head.profile",
                 title: "Stress",
-                text: stressRecommendation
+                text:
+                    stressRecommendation
             )
 
             Divider()
 
+
             nextStepRow(
-                icon: "heart.circle.fill",
-                title: "Mental Wellness",
-                text: mentalWellnessRecommendation
+                icon:
+                    "heart.circle.fill",
+                title:
+                    "Mental Wellness",
+                text:
+                    mentalWellnessRecommendation
             )
         }
         .background(
@@ -796,7 +1020,7 @@ struct HealthRecommendationsView: View {
     }
 
 
-    // MARK: - Popup
+    // MARK: - Status Popup
 
     private var statusInfoPopup: some View {
 
@@ -822,37 +1046,48 @@ struct HealthRecommendationsView: View {
                 Spacer()
 
                 Button {
+
                     closeStatusInfo()
+
                 } label: {
 
-                    Image(systemName: "xmark")
-                        .font(
-                            .system(
-                                size: 12,
-                                weight: .bold
-                            )
+                    Image(
+                        systemName:
+                            "xmark"
+                    )
+                    .font(
+                        .system(
+                            size: 12,
+                            weight: .bold
                         )
-                        .foregroundStyle(.secondary)
-                        .frame(
-                            width: 28,
-                            height: 28
-                        )
-                        .background(
-                            Color.secondary
-                                .opacity(0.12)
-                        )
-                        .clipShape(Circle())
+                    )
+                    .foregroundStyle(
+                        .secondary
+                    )
+                    .frame(
+                        width: 28,
+                        height: 28
+                    )
+                    .background(
+                        Color.secondary
+                            .opacity(0.12)
+                    )
+                    .clipShape(
+                        Circle()
+                    )
                 }
                 .buttonStyle(.plain)
             }
 
             Divider()
 
+
             Text(
                 "Your status is calculated from your saved readings."
             )
             .font(.subheadline)
             .foregroundStyle(.primary)
+
 
             Text(
                 "Readings are compared only with previous readings taken at the same activity level."
@@ -864,8 +1099,9 @@ struct HealthRecommendationsView: View {
                 vertical: true
             )
 
+
             Text(
-                "The app checks recent trends, unusually high or low readings, and whether your latest reading is near the high or low end of its expected range."
+                "The app checks recent trends, unusually high or low readings, and whether your average reading is near the high or low end of its expected range."
             )
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -873,6 +1109,18 @@ struct HealthRecommendationsView: View {
                 horizontal: false,
                 vertical: true
             )
+
+
+            Text(
+                "A high-end or low-end range position by itself does not cause a Review Recommended status."
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(
+                horizontal: false,
+                vertical: true
+            )
+
 
             Text(
                 "These recommendations are intended for general wellness information and are not a medical diagnosis."
@@ -885,7 +1133,9 @@ struct HealthRecommendationsView: View {
             )
         }
         .padding(18)
-        .frame(maxWidth: 330)
+        .frame(
+            maxWidth: 330
+        )
         .background(
             cardBackground
         )
@@ -900,7 +1150,8 @@ struct HealthRecommendationsView: View {
             )
         )
         .shadow(
-            color: .black.opacity(0.25),
+            color:
+                .black.opacity(0.25),
             radius: 20,
             x: 0,
             y: 10
@@ -943,7 +1194,9 @@ struct HealthRecommendationsView: View {
             Text(value)
                 .fontWeight(.semibold)
                 .foregroundStyle(color)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(
+                    .trailing
+                )
         }
         .padding()
     }
@@ -962,10 +1215,13 @@ struct HealthRecommendationsView: View {
             spacing: 12
         ) {
 
-            Image(systemName: icon)
-                .foregroundStyle(.blue)
-                .frame(width: 26)
-                .padding(.top, 2)
+            Image(
+                systemName: icon
+            )
+            .foregroundStyle(.blue)
+            .frame(width: 26)
+            .padding(.top, 2)
+
 
             VStack(
                 alignment: .leading,
@@ -1000,54 +1256,76 @@ struct HealthRecommendationsView: View {
         activity: ReadingActivity
     ) -> HealthFlags {
 
-        let sorted = readings.sorted {
-            $0.date < $1.date
-        }
+        let sorted =
+            readings.sorted {
+                $0.date < $1.date
+            }
 
-        guard let latest = sorted.last else {
+        guard !sorted.isEmpty else {
+
             return HealthFlags()
         }
 
-        var flags = HealthFlags()
+        var flags =
+            HealthFlags()
 
+
+        // Last 7 readings are used for recent trend.
         let recent =
             Array(
                 sorted.suffix(7)
             )
+
 
         flags.rising =
             isRising(
                 readings: recent
             )
 
+
         flags.declining =
             isDeclining(
                 readings: recent
             )
 
+
+        // Latest reading is compared with PREVIOUS readings.
         flags.unusuallyHigh =
             isUnusuallyHigh(
                 readings: sorted
             )
+
 
         flags.unusuallyLow =
             isUnusuallyLow(
                 readings: sorted
             )
 
+
+        // Range position is based on the average
+        // for the current activity group.
+        let groupAverage =
+            sorted
+                .map { $0.bpm }
+                .reduce(0, +)
+            / Double(sorted.count)
+
+
         flags.highEnd =
             isHighEndOfRange(
-                bpm: latest.bpm,
+                bpm: groupAverage,
                 age: age,
                 activity: activity
             )
 
+
         flags.lowEnd =
             isLowEndOfRange(
-                bpm: latest.bpm,
+                bpm: groupAverage,
                 age: age,
                 activity: activity
             )
+
 
         return flags
     }
@@ -1122,11 +1400,14 @@ struct HealthRecommendationsView: View {
             ) / 2.0
 
         let yMean =
-            values.reduce(0, +)
-            / count
+            values.reduce(
+                0,
+                +
+            ) / count
 
         var numerator = 0.0
         var denominator = 0.0
+
 
         for index in values.indices {
 
@@ -1147,13 +1428,14 @@ struct HealthRecommendationsView: View {
                 )
         }
 
+
         guard denominator > 0 else {
             return 0
         }
 
         return
-            numerator
-            / denominator
+            numerator /
+            denominator
     }
 
 
@@ -1167,16 +1449,20 @@ struct HealthRecommendationsView: View {
             return false
         }
 
+
         let sorted =
             readings.sorted {
                 $0.date < $1.date
             }
 
+
         guard let latest =
             sorted.last
         else {
+
             return false
         }
+
 
         let previous =
             sorted
@@ -1185,13 +1471,21 @@ struct HealthRecommendationsView: View {
                     $0.bpm
                 }
 
+
         guard !previous.isEmpty else {
             return false
         }
 
+
         let mean =
-            previous.reduce(0, +)
-            / Double(previous.count)
+            previous.reduce(
+                0,
+                +
+            )
+            / Double(
+                previous.count
+            )
+
 
         let variance =
             previous
@@ -1201,20 +1495,33 @@ struct HealthRecommendationsView: View {
                         2
                     )
                 }
-                .reduce(0, +)
-            / Double(previous.count)
+                .reduce(
+                    0,
+                    +
+                )
+            / Double(
+                previous.count
+            )
+
 
         let standardDeviation =
-            sqrt(variance)
+            sqrt(
+                variance
+            )
+
 
         guard standardDeviation > 0 else {
-            return latest.bpm > mean
+
+            return latest.bpm >
+                mean
         }
+
 
         return latest.bpm >
             mean +
             (
-                standardDeviation * 2
+                standardDeviation
+                * 2
             )
     }
 
@@ -1229,16 +1536,20 @@ struct HealthRecommendationsView: View {
             return false
         }
 
+
         let sorted =
             readings.sorted {
                 $0.date < $1.date
             }
 
+
         guard let latest =
             sorted.last
         else {
+
             return false
         }
+
 
         let previous =
             sorted
@@ -1247,13 +1558,21 @@ struct HealthRecommendationsView: View {
                     $0.bpm
                 }
 
+
         guard !previous.isEmpty else {
             return false
         }
 
+
         let mean =
-            previous.reduce(0, +)
-            / Double(previous.count)
+            previous.reduce(
+                0,
+                +
+            )
+            / Double(
+                previous.count
+            )
+
 
         let variance =
             previous
@@ -1263,20 +1582,33 @@ struct HealthRecommendationsView: View {
                         2
                     )
                 }
-                .reduce(0, +)
-            / Double(previous.count)
+                .reduce(
+                    0,
+                    +
+                )
+            / Double(
+                previous.count
+            )
+
 
         let standardDeviation =
-            sqrt(variance)
+            sqrt(
+                variance
+            )
+
 
         guard standardDeviation > 0 else {
-            return latest.bpm < mean
+
+            return latest.bpm <
+                mean
         }
+
 
         return latest.bpm <
             mean -
             (
-                standardDeviation * 2
+                standardDeviation
+                * 2
             )
     }
 
@@ -1295,20 +1627,27 @@ struct HealthRecommendationsView: View {
                 activity: activity
             )
 
+
         guard
             bpm >= range.lowerBound,
             bpm <= range.upperBound
         else {
+
             return false
         }
 
+
         let width =
-            range.upperBound
-            - range.lowerBound
+            range.upperBound -
+            range.lowerBound
+
 
         let threshold =
-            range.upperBound
-            - (width * 0.10)
+            range.upperBound -
+            (
+                width * 0.10
+            )
+
 
         return bpm >= threshold
     }
@@ -1328,20 +1667,27 @@ struct HealthRecommendationsView: View {
                 activity: activity
             )
 
+
         guard
             bpm >= range.lowerBound,
             bpm <= range.upperBound
         else {
+
             return false
         }
 
+
         let width =
-            range.upperBound
-            - range.lowerBound
+            range.upperBound -
+            range.lowerBound
+
 
         let threshold =
-            range.lowerBound
-            + (width * 0.10)
+            range.lowerBound +
+            (
+                width * 0.10
+            )
+
 
         return bpm <= threshold
     }
@@ -1354,55 +1700,60 @@ struct HealthRecommendationsView: View {
         activity: ReadingActivity
     ) -> ClosedRange<Double> {
 
-        let restingRange:
-            ClosedRange<Double>
+        let restingRange: ClosedRange<Double>
 
         switch age {
 
         case 0:
-            restingRange =
-                80...160
+            restingRange = 80...160
 
         case 1...2:
-            restingRange =
-                80...130
+            restingRange = 80...130
 
         case 3...5:
-            restingRange =
-                80...110
+            restingRange = 80...110
 
         case 6...12:
-            restingRange =
-                70...100
+            restingRange = 70...100
 
         default:
-            restingRange =
-                60...100
+            restingRange = 60...100
         }
 
-        let multiplier: Double
+
+        let estimatedMaxHR =
+            208.0 -
+            (0.7 * Double(age))
+
 
         switch activity {
 
         case .none:
-            multiplier = 1.0
+
+            return restingRange
+
 
         case .light:
-            multiplier = 1.50
+
+            let lower =
+                restingRange.lowerBound * 1.50
+
+            let upper =
+                estimatedMaxHR * 0.70
+
+            return lower...max(lower, upper)
+
 
         case .heavy:
-            multiplier = 1.75
+
+            let lower =
+                estimatedMaxHR * 0.70
+
+            let upper =
+                estimatedMaxHR
+
+            return lower...upper
         }
-
-        let lower =
-            restingRange.lowerBound
-            * multiplier
-
-        let upper =
-            restingRange.upperBound
-            * multiplier
-
-        return lower...upper
     }
 
 

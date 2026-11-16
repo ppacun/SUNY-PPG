@@ -339,22 +339,53 @@ private func heartRange(
     age: Int
 ) -> ClosedRange<Int> {
 
+    let minimum: Int
+
     switch age {
 
     case 0:
-        return 80...160
+        minimum = 80
 
     case 1...2:
-        return 80...130
+        minimum = 80
 
     case 3...5:
-        return 80...110
+        minimum = 80
 
     case 6...12:
-        return 70...100
+        minimum = 70
 
     default:
-        return 60...100
+        minimum = 60
     }
+
+    let maximum: Int
+
+    if age >= 13 {
+        maximum = Int(
+            (208.0 - (0.7 * Double(age))).rounded()
+        )
+    } else {
+
+        switch age {
+
+        case 0:
+            maximum = 160
+
+        case 1...2:
+            maximum = 130
+
+        case 3...5:
+            maximum = 110
+
+        case 6...12:
+            maximum = 100
+
+        default:
+            maximum = 100
+        }
+    }
+
+    return minimum...maximum
 }
 
