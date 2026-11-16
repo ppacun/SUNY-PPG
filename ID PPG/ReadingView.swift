@@ -1,534 +1,1325 @@
-// xcode: set sdk=iOS
-
 import SwiftUI
 import AudioToolbox
+import Combine
+
 struct ReadingView: View {
-    
-    @State private var showResults = false
+
+    @Environment(\.dismiss) private var dismiss
+
     @StateObject private var camera = CameraManager()
     @StateObject private var ecgWave = ECGHeartbeatWave()
-   
-    @State private var bpmValuesThisReading: [Double] = []
-    @State private var finalPPGWaveform: [Double] = []
-    let minRVal = 140
-    let maxBVal = 70
-    let maxGVal = 130
-    let readTime = 60
-    @State private var isReading = false
-    @State private var readingStoppedEarly = false
-    @State private var startTime: Date?
-    @State private var secondsRemaining = 60
-    @State private var readingComplete = false
-    @State private var lastFingerDetectedTime: Date?
+
+    @State private var showResults = false
     @State private var showWarning = true
     @State private var showIncomplete = false
     @State private var neverShowWarningA = false
-    
-    @AppStorage("neverShowWarning") private var neverShowWarning = false
-    let readingDuration: TimeInterval = 60
-    
-    // Average of the BPM values received during this reading (nil if there were none).
+
+    @State private var isReading = false
+    @State private var readingComplete = false
+
+    @State private var startTime: Date?
+    @State private var secondsRemaining = 60
+    @State private var lastFingerDetectedTime: Date?
+
+    @State private var bpmValuesThisReading: [Double] = []
+    @State private var finalPPGWaveform: [Double] = []
+
+    @AppStorage("neverShowWarning")
+    private var neverShowWarning = false
+
+    private let minRVal = 110//140
+    private let maxBVal = 70
+    private let maxGVal = 130
+
+    private let readTime = 60
+    private let readingDuration: TimeInterval = 60
+
+
+    // MARK: - Average BPM
+
     private var averageBPM: Double? {
-        if bpmValuesThisReading.isEmpty {
+
+        guard !bpmValuesThisReading.isEmpty else {
             return nil
         }
+
         return bpmValuesThisReading.reduce(0, +)
-        / Double(bpmValuesThisReading.count)
+            / Double(bpmValuesThisReading.count)
     }
-    
+
+
+    // MARK: - Signal Quality
+
+    private var signalQualityPercent: Double {
+
+        min(
+            max(camera.signalScore * 100.0, 0),
+            100
+        )
+    }
+
+
+    // MARK: - Finger Detection
+
+    private var leftFinger: Bool {
+
+        camera.topRed > minRVal &&
+        camera.topBlue < maxBVal &&
+        camera.topGreen < maxGVal
+    }
+
+
+    private var rightFinger: Bool {
+
+        camera.bottomRed > minRVal &&
+        camera.bottomBlue < maxBVal &&
+        camera.bottomGreen < maxGVal
+    }
+
+
+    private var topFinger: Bool {
+
+        camera.leftRed > minRVal &&
+        camera.leftBlue < maxBVal &&
+        camera.leftGreen < maxGVal
+    }
+
+
+    private var centerFinger: Bool {
+
+        camera.centerRed > minRVal &&
+        camera.centerBlue < maxBVal &&
+        camera.centerGreen < maxGVal
+    }
+
+
+    private var bottomFinger: Bool {
+
+        camera.rightRed + 10 > minRVal &&
+        camera.rightBlue < maxBVal &&
+        camera.rightGreen < maxGVal
+    }
+
+
+    private var fingerDetected: Bool {
+
+        centerFinger &&
+        bottomFinger &&
+        topFinger &&
+        rightFinger &&
+        leftFinger
+    }
+
+
+    // MARK: - Progress
+
+    private var readingProgress: Double {
+
+        guard isReading else {
+            return 0
+        }
+
+        return min(
+            max(
+                Double(readTime - secondsRemaining)
+                    / Double(readTime),
+                0
+            ),
+            1
+        )
+    }
+
+
+    // MARK: - Guidance
+
+    private var guidanceIcon: String {
+
+        if fingerDetected {
+            return isReading
+                ? "waveform.path.ecg"
+                : "checkmark.circle.fill"
+        }
+
+        if centerFinger && topFinger && leftFinger && rightFinger {
+            return "arrow.down"
+        }
+
+        if centerFinger && bottomFinger && leftFinger && rightFinger {
+            return "arrow.up"
+        }
+
+        if topFinger && rightFinger {
+            return "arrow.down.right"
+        }
+
+        if topFinger && leftFinger {
+            return "arrow.down.left"
+        }
+
+        if bottomFinger && rightFinger {
+            return "arrow.up.right"
+        }
+
+        if bottomFinger && leftFinger {
+            return "arrow.up.left"
+        }
+
+        if centerFinger {
+            return "record.circle"
+        }
+
+        if topFinger {
+            return "arrow.down"
+        }
+
+        if bottomFinger {
+            return "arrow.up"
+        }
+
+        if leftFinger {
+            return "arrow.left"
+        }
+
+        if rightFinger {
+            return "arrow.right"
+        }
+
+        return "hand.point.up.left.fill"
+    }
+
+
+    private var guidanceTitle: String {
+
+        if fingerDetected {
+
+            if isReading {
+                return "Measuring Heart Rate"
+            }
+
+            return "Finger Detected"
+        }
+
+        if centerFinger {
+            return "Adjust Your Finger"
+        }
+
+        return "Place Finger on Camera"
+    }
+
+
+    private var guidanceText: String {
+
+        if fingerDetected {
+
+            if isReading {
+                return "Keep your finger still and maintain gentle pressure."
+            }
+
+            return "Your finger is positioned correctly."
+        }
+
+        if centerFinger && topFinger && leftFinger && rightFinger {
+            return "Move your finger down slightly."
+        }
+
+        if centerFinger && bottomFinger && leftFinger && rightFinger {
+            return "Move your finger up slightly."
+        }
+
+        if topFinger && rightFinger {
+            return "Move your finger down and right."
+        }
+
+        if topFinger && leftFinger {
+            return "Move your finger down and left."
+        }
+
+        if bottomFinger && rightFinger {
+            return "Move your finger up and right."
+        }
+
+        if bottomFinger && leftFinger {
+            return "Move your finger up and left."
+        }
+
+        if centerFinger {
+            return "Move your finger closer to fully cover the camera."
+        }
+
+        if topFinger {
+            return "Move your finger down."
+        }
+
+        if bottomFinger {
+            return "Move your finger up."
+        }
+
+        if leftFinger {
+            return "Move your finger left."
+        }
+
+        if rightFinger {
+            return "Move your finger right."
+        }
+
+        return "Cover the rear camera and flash completely with your fingertip."
+    }
+
+
+    // MARK: - Body
+
     var body: some View {
-        ZStack {
-            VStack(spacing: 20) {  //left is top Right is bottom, top is left, +90 deg
-                    VStack(spacing: 20) {  //left is top Right is bottom, top is left, +90 deg
-                        let LVR = (camera.topRed > minRVal)
-                        let RVR = (camera.bottomRed > minRVal)
-                        let TVR = (camera.leftRed > minRVal)
-                        let CVR = (camera.centerRed > minRVal)
-                        let BVR = (camera.rightRed + 10 > minRVal)
-                        let LVB = (camera.topBlue < maxBVal)
-                        let RVB = (camera.bottomBlue < maxBVal)
-                        let TVB = (camera.leftBlue < maxBVal)
-                        let CVB = (camera.centerBlue < maxBVal)
-                        let BVB = (camera.rightBlue < maxBVal)
-                        let LVG = (camera.topGreen < maxGVal)
-                        let RVG = (camera.bottomGreen < maxGVal)
-                        let TVG = (camera.leftGreen < maxGVal)
-                        let CVG = (camera.centerGreen < maxGVal)
-                        let BVG = (camera.rightGreen < maxGVal)
-                        let LF = LVR && LVB && LVG
-                        let RF = RVR && RVB && RVG
-                        let CF = CVR && CVB && CVG
-                        let TF = TVR && TVG && TVB
-                        let BF = BVR && BVB && BVG
-                        let fingerDetected = CF && BF && TF && RF && LF
-                        
-                        if fingerDetected {
-                            
-                            VStack(spacing: 10) {
-                                Image(systemName: "heart.fill")
-                                    .font(.system(size: 70))
-                                    .foregroundStyle(.red)
-                                
-                                Text("Finger Detected")
-                                    .font(.largeTitle)
-                                    .bold()
-                                
-                                if isReading {
-                                    Text(
-                                        "Please leave finger for \(secondsRemaining) seconds"
-                                    )
-                                    .font(.title2)
-                                    .bold()
-                                    
-                                    Text("reading may not be stable till reading complete")
-                                        .font(.caption)
-                                    WaveformShape(points: ecgWave.points)
-                                        .stroke(
-                                            Color.red,
-                                            style: StrokeStyle(
-                                                lineWidth: 3,
-                                                lineJoin: .round
-                                            )
-                                        )
-                                        .frame(height: 100)
-                                }
-                            }
-                            
-                        } else if CF && TF && LF && RF {
-                            Image(systemName: "arrow.down")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Down")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if CF && BF && LF && RF {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Up")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if TF && RF {
-                            Image(systemName: "arrow.down.right")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Down and Right")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if TF && LF {
-                            Image(systemName: "arrow.down.left")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Down and Left")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if BF && RF {
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Up and Right")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if BF && LF {
-                            Image(systemName: "arrow.up.left")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Up and left")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if CF {
-                            Image(systemName: "record.circle")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Closer")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if TF {
-                            Image(systemName: "arrow.down")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Down")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if BF {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Up")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if LF {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger left")
-                                .font(.largeTitle)
-                                .bold()
-                        } else if RF {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.gray)
-                            
-                            Text("Move Finger Right")
-                                .font(.largeTitle)
-                                .bold()
-                        }else {
-                            
-                            Text("Please place finger over camera")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .multilineTextAlignment(.center)
-                        }
-                        
-                        CameraView(session: camera.session)
-                            .frame(width: 260, height: 260)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.gray, lineWidth: 4)
-                            )
-                            .overlay {
-                                if isReading {
-                                    Text(
-                                        camera.estimatedBPM.map {
-                                            String(Int($0.rounded()))
-                                        } ?? "--"
-                                    )
-                                    .font(.system(size: 72, weight: .bold))
-                                    
-                                    .foregroundStyle(.black)
-                                }
-                            }
-                            .onAppear {
-                                camera.turnFlashlightOn()
-                            }
-                            .onDisappear {
-                                camera.turnFlashlightOff()
-                            }
-                            .onChange(of: camera.centerRed) { _ in
-                                
-                                let LVR = camera.topRed > minRVal
-                                let RVR = camera.bottomRed > minRVal
-                                let TVR = camera.leftRed > minRVal
-                                let CVR = camera.centerRed > minRVal
-                                let BVR = camera.rightRed + 10 > minRVal
-                                
-                                let LVB = camera.topBlue < maxBVal
-                                let RVB = camera.bottomBlue < maxBVal
-                                let TVB = camera.leftBlue < maxBVal
-                                let CVB = camera.centerBlue < maxBVal
-                                let BVB = camera.rightBlue < maxBVal
-                                
-                                let LVG = camera.topGreen < maxGVal
-                                let RVG = camera.bottomGreen < maxGVal
-                                let TVG = camera.leftGreen < maxGVal
-                                let CVG = camera.centerGreen < maxGVal
-                                let BVG = camera.rightGreen < maxGVal
-                                
-                                let LF = LVR && LVB && LVG
-                                let RF = RVR && RVB && RVG
-                                let CF = CVR && CVB && CVG
-                                let TF = TVR && TVG && TVB
-                                let BF = BVR && BVB && BVG
-                                
-                                let detected = CF && BF && TF && RF && LF
-                                //added this for a less sensitive reading
-                                if detected {
-                                    lastFingerDetectedTime = Date()
-                                }
-                                
-                                let fingerStillPresent =
-                                detected
-                                || (lastFingerDetectedTime.map {
-                                    Date().timeIntervalSince($0) < 0.5
-                                } ?? false)
-                                //end of addition
-                                
-                                if fingerStillPresent {
-                                    
-                                    if !isReading && !readingComplete {
-                                        isReading = true
-                                        readingStoppedEarly = false
-                                        startTime = Date()
-                                        secondsRemaining = 60
-                                        
-                                        camera.startRecording()
-                                    }
-                                    
-                                    if isReading, let start = startTime {
-                                        
-                                        let elapsed = Date().timeIntervalSince(
-                                            start
-                                        )
-                                        
-                                        secondsRemaining = max(
-                                            0,
-                                            Int(ceil(readingDuration - elapsed))
-                                        )
-                                        
-                                        if elapsed >= readingDuration {
-                                            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-                                            finalPPGWaveform = ecgWave.points
-                                            camera.stopRecording()
-                                            isReading = false
-                                            readingComplete = true
-                                            secondsRemaining = 0
-                                            startTime = nil
-                                            showResults = true
-                                        }
-                                    }
-                                    
-                                } else if isReading {
-                                    
-                                    camera.stopRecording()
-                                    isReading = false
-                                    readingStoppedEarly = true
-                                    startTime = nil
-                                    if secondsRemaining <= readTime / 2 {
-                                        showIncomplete = true
-                                    }
-                                    secondsRemaining = readTime
-                                }
-                            }
-                    
-                        Text("Please remain still")
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
-                    .onChange(of: isReading) { nowReading in
-                        if nowReading {
-                            //reset BPM values and start the ECG-style animation
-                            bpmValuesThisReading = []
-                            ecgWave.beatsPerMinute = camera.estimatedBPM
-                            ecgWave.start()
-                        } else {
-                            //stop the animation when the reading ends
-                            ecgWave.stop()
-                        }
-                    }
-                    .onChange(of: camera.estimatedBPM) { latestBPM in
-                        ecgWave.beatsPerMinute = latestBPM
-                        //heartbeatWave.beatsPerMinute = latestBPM
-                        if isReading, let latestBPM = latestBPM {
-                            bpmValuesThisReading.append(latestBPM)
-                        }
-                    }
-                    .navigationDestination(isPresented: $showResults) {
-                        ResultsView(
-                            averageBPM: averageBPM,
-                            confidencePCT: 99.9,
-                            //path: $path
-                            finalPPGWaveform: finalPPGWaveform
-                        )
-                    }
-                    
-                
-            }
-            if showWarning && !neverShowWarning {
-                
-                Color.black.opacity(0.45)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Image(systemName: "heart.text.clipboard")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.white)
-                    
-                    Text("Before Reaidng Please:")
-                        .font(.title)
-                        .bold()
-                    
-                    Text("Remain Quiet\nRemain Still\nRemain Calm")
-                        .multilineTextAlignment(.leading)
-                    Toggle("Don't show again", isOn: $neverShowWarningA)
-                    Button("Continue") {
-                        showWarning = false
-                        if(neverShowWarningA){
-                            neverShowWarning = true
-                        }
-                    }
-                    .padding()
-                    .frame(width: 180)
-                    .background(.white)
-                    .foregroundStyle(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+        ScrollView {
+
+            VStack(spacing: 22) {
+
+                statusSection
+
+                cameraSection
+
+                guidanceSection
+
+                if isReading {
+                    measurementSection
                 }
-                .padding(30)
-                .background(.gray)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(radius: 15)
-                .padding(.horizontal, 40)
+
+                Text(
+                    "Stay still and keep your finger in place until the measurement finishes."
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
             }
-            if showIncomplete {
-                
-                Color.black.opacity(0.45)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Image(systemName: "heart.slash")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.white)
-                    
-                    Text("Reading Incomplete")
-                        .font(.title)
-                        .bold()
-                    
-                    Text(
-                        "We recommend you retake the test for best results"
-                    )
-                    .multilineTextAlignment(.leading)
-                    
-                    Button("Retake") {
-                        showIncomplete = false
-                        
-                    }
-                    .padding()
-                    .frame(width: 180)
-                    .background(.white)
-                    .foregroundStyle(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    Button("View results") {
-                        showIncomplete = false
-                        camera.stopRecording()
-                        isReading = false
-                        readingComplete = true
-                        secondsRemaining = 0
-                        startTime = nil
-                        
-                        showResults = true
-                        
-                    }
-                    .padding()
-                    .frame(width: 180)
-                    .background(.white)
-                    .foregroundStyle(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .padding(30)
-                .background(.gray)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(radius: 15)
-                .padding(.horizontal, 40)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 36)
+        }
+        .background(
+            Color(uiColor: .systemBackground)
+                .ignoresSafeArea()
+        )
+
+        .navigationTitle("Heart Rate")
+        .navigationBarTitleDisplayMode(.inline)
+
+        .onAppear {
+
+            showWarning = !neverShowWarning
+
+            camera.turnFlashlightOn()
+        }
+
+        .onDisappear {
+
+            camera.turnFlashlightOff()
+
+            ecgWave.stop()
+        }
+
+        .onReceive(
+            camera.$centerRed.dropFirst()
+        ) { _ in
+
+            handleFingerDetection()
+        }
+
+        .onReceive(
+            camera.$estimatedBPM.dropFirst()
+        ) { latestBPM in
+
+            ecgWave.beatsPerMinute =
+                latestBPM
+
+            if isReading,
+               let latestBPM,
+               latestBPM.isFinite {
+
+                bpmValuesThisReading.append(
+                    latestBPM
+                )
             }
         }
+
+        .navigationDestination(
+            isPresented: $showResults
+        ) {
+
+            ResultsView(
+                averageBPM: averageBPM,
+                confidencePCT: 99.9,
+                finalPPGWaveform: finalPPGWaveform
+            )
+        }
+
+        .sheet(
+            isPresented: Binding(
+                get: {
+                    showWarning &&
+                    !neverShowWarning
+                },
+                set: {
+                    showWarning = $0
+                }
+            )
+        ) {
+
+            preparationSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+
+        .sheet(
+            isPresented: $showIncomplete
+        ) {
+
+            incompleteSheet
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+
+    // MARK: - Status
+
+    private var statusSection: some View {
+
+        HStack(spacing: 8) {
+
+            Circle()
+                .fill(
+                    fingerDetected
+                    ? Color.red
+                    : Color.secondary.opacity(0.45)
+                )
+                .frame(
+                    width: 8,
+                    height: 8
+                )
+
+            Text(
+                fingerDetected
+                ? isReading
+                    ? "Measuring"
+                    : "Ready to Measure"
+                : "Waiting for Finger"
+            )
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(
+                    Color.secondary.opacity(0.12)
+                )
+        )
+    }
+
+
+    // MARK: - Camera
+
+    private var cameraSection: some View {
+
+        ZStack {
+
+            Circle()
+                .stroke(
+                    Color.secondary.opacity(0.18),
+                    lineWidth: 9
+                )
+                .frame(
+                    width: 284,
+                    height: 284
+                )
+
+
+            if isReading {
+
+                Circle()
+                    .trim(
+                        from: 0,
+                        to: readingProgress
+                    )
+                    .stroke(
+                        Color.red,
+                        style: StrokeStyle(
+                            lineWidth: 9,
+                            lineCap: .round
+                        )
+                    )
+                    .rotationEffect(
+                        .degrees(-90)
+                    )
+                    .frame(
+                        width: 284,
+                        height: 284
+                    )
+                    .animation(
+                        .linear(duration: 0.2),
+                        value: readingProgress
+                    )
+            }
+
+
+            CameraView(
+                session: camera.session
+            )
+            .frame(
+                width: 260,
+                height: 260
+            )
+            .clipShape(Circle())
+
+
+            Circle()
+                .stroke(
+                    fingerDetected
+                    ? Color.red.opacity(0.65)
+                    : Color.secondary.opacity(0.28),
+                    lineWidth: 2
+                )
+                .frame(
+                    width: 260,
+                    height: 260
+                )
+
+
+            if isReading {
+
+                VStack(spacing: 2) {
+
+                    Text(
+                        camera.estimatedBPM.map {
+                            String(
+                                Int(
+                                    $0.rounded()
+                                )
+                            )
+                        } ?? "--"
+                    )
+                    .font(
+                        .system(
+                            size: 68,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                    )
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+
+                    Text("BPM")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            .white.opacity(0.85)
+                        )
+                }
+            }
+        }
+        .accessibilityElement(
+            children: .combine
+        )
+        .accessibilityLabel(
+            isReading
+            ? "Current heart rate measurement"
+            : "Camera preview"
+        )
+    }
+
+
+    // MARK: - Guidance
+
+    private var guidanceSection: some View {
+
+        VStack(spacing: 8) {
+
+            Image(
+                systemName: guidanceIcon
+            )
+            .font(
+                .system(
+                    size: 26,
+                    weight: .semibold
+                )
+            )
+            .foregroundStyle(
+                fingerDetected
+                ? Color.red
+                : Color.secondary
+            )
+
+
+            Text(guidanceTitle)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.center)
+
+
+            Text(guidanceText)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+    }
+
+
+    // MARK: - Measurement
+
+    private var measurementSection: some View {
+
+        VStack(spacing: 16) {
+
+            HStack {
+
+                VStack(
+                    alignment: .leading,
+                    spacing: 3
+                ) {
+
+                    Text("Measurement")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(
+                        "\(secondsRemaining) seconds remaining"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                }
+
+
+                Spacer()
+
+
+                Text(
+                    "\(Int(readingProgress * 100))%"
+                )
+                .font(.headline)
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+            }
+
+
+            ProgressView(
+                value: readingProgress
+            )
+            .tint(.red)
+
+
+            WaveformShape(
+                points: ecgWave.points
+            )
+            .stroke(
+                Color.red,
+                style: StrokeStyle(
+                    lineWidth: 2.5,
+                    lineCap: .round,
+                    lineJoin: .round
+                )
+            )
+            .frame(height: 70)
+
+
+            HStack(spacing: 6) {
+
+                Image(
+                    systemName:
+                        "waveform.path.ecg"
+                )
+
+                Text(
+                    "Signal may stabilize as the measurement continues."
+                )
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(
+                maxWidth: .infinity,
+                alignment: .leading
+            )
+        }
+        .padding(18)
+        .background(
+            Color(
+                uiColor:
+                    .secondarySystemBackground
+            )
+        )
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: 20,
+                style: .continuous
+            )
+        )
+    }
+
+
+    // MARK: - Preparation Sheet
+
+    private var preparationSheet: some View {
+
+        VStack(spacing: 22) {
+
+            Spacer()
+
+
+            Image(
+                systemName:
+                    "heart.text.clipboard.fill"
+            )
+            .font(.system(size: 44))
+            .foregroundStyle(.red)
+
+
+            VStack(spacing: 6) {
+
+                Text("Before Your Reading")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+
+                Text(
+                    "For a more consistent measurement:"
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+
+
+            VStack(spacing: 14) {
+
+                preparationRow(
+                    icon:
+                        "speaker.slash.fill",
+                    text:
+                        "Remain quiet"
+                )
+
+                preparationRow(
+                    icon:
+                        "figure.stand",
+                    text:
+                        "Remain still"
+                )
+
+                preparationRow(
+                    icon:
+                        "wind",
+                    text:
+                        "Relax and breathe normally"
+                )
+            }
+            .padding(16)
+            .background(
+                Color(
+                    uiColor:
+                        .secondarySystemBackground
+                )
+            )
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: 18,
+                    style: .continuous
+                )
+            )
+
+
+            Toggle(
+                "Don't show this again",
+                isOn:
+                    $neverShowWarningA
+            )
+            .tint(.red)
+
+
+            Button {
+
+                if neverShowWarningA {
+                    neverShowWarning = true
+                }
+
+                showWarning = false
+
+            } label: {
+
+                Text("Continue")
+                    .fontWeight(.semibold)
+                    .frame(
+                        maxWidth: .infinity
+                    )
+                    .frame(height: 50)
+            }
+            .buttonStyle(
+                .borderedProminent
+            )
+            .tint(.red)
+
+
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .background(
+            Color(
+                uiColor:
+                    .systemBackground
+            )
+        )
+    }
+
+
+    // MARK: - Preparation Row
+
+    private func preparationRow(
+        icon: String,
+        text: String
+    ) -> some View {
+
+        HStack(spacing: 12) {
+
+            Image(systemName: icon)
+                .foregroundStyle(.red)
+                .frame(width: 24)
+
+            Text(text)
+                .foregroundStyle(.primary)
+
+            Spacer()
+        }
+    }
+
+
+    // MARK: - Incomplete Sheet
+
+    private var incompleteSheet: some View {
+
+        VStack(spacing: 22) {
+
+            Spacer()
+
+
+            Image(
+                systemName:
+                    "heart.slash.fill"
+            )
+            .font(.system(size: 44))
+            .foregroundStyle(.red)
+
+
+            VStack(spacing: 8) {
+
+                Text("Reading Incomplete")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+
+                Text(
+                    "Your finger moved before the measurement finished. Retaking it may provide a more consistent result."
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            }
+
+
+            Button {
+
+                showIncomplete = false
+
+                resetReading()
+
+            } label: {
+
+                Text("Retake Reading")
+                    .fontWeight(.semibold)
+                    .frame(
+                        maxWidth: .infinity
+                    )
+                    .frame(height: 50)
+            }
+            .buttonStyle(
+                .borderedProminent
+            )
+            .tint(.red)
+
+
+            Button {
+
+                showIncomplete = false
+
+                finalPPGWaveform =
+                    ecgWave.points
+
+                camera.stopRecording()
+                ecgWave.stop()
+
+                isReading = false
+                readingComplete = true
+                secondsRemaining = 0
+                startTime = nil
+
+                showResults = true
+
+            } label: {
+
+                Text("View Current Result")
+                    .fontWeight(.medium)
+                    .frame(
+                        maxWidth: .infinity
+                    )
+                    .frame(height: 44)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.red)
+
+
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .background(
+            Color(
+                uiColor:
+                    .systemBackground
+            )
+        )
+    }
+
+
+    // MARK: - Finger Detection Handler
+
+    private func handleFingerDetection() {
+
+        if showWarning ||
+            showIncomplete ||
+            readingComplete {
+
+            return
+        }
+
+
+        let detected =
+            fingerDetected
+
+
+        if detected {
+
+            lastFingerDetectedTime =
+                Date()
+        }
+
+
+        let fingerStillPresent =
+
+            detected ||
+
+            (
+                lastFingerDetectedTime.map {
+
+                    Date()
+                        .timeIntervalSince(
+                            $0
+                        ) < 0.5
+
+                } ?? false
+            )
+
+
+        if fingerStillPresent {
+
+            if !isReading {
+
+                startMeasurement()
+            }
+
+
+            updateTimer()
+
+        } else if isReading {
+
+            stopMeasurementEarly()
+        }
+    }
+
+
+    // MARK: - Start Measurement
+
+    private func startMeasurement() {
+
+        isReading = true
+
+        startTime = Date()
+
+        secondsRemaining =
+            readTime
+
+        bpmValuesThisReading = []
+
+        finalPPGWaveform = []
+
+        ecgWave.beatsPerMinute =
+            camera.estimatedBPM
+
+        ecgWave.start()
+
+        camera.startRecording()
+    }
+
+
+    // MARK: - Update Timer
+
+    private func updateTimer() {
+
+        guard
+            isReading,
+            let start = startTime
+        else {
+            return
+        }
+
+
+        let elapsed =
+
+            Date()
+                .timeIntervalSince(start)
+
+
+        secondsRemaining =
+
+            max(
+                0,
+                Int(
+                    ceil(
+                        readingDuration
+                            - elapsed
+                    )
+                )
+            )
+
+
+        if elapsed >=
+            readingDuration {
+
+            completeMeasurement()
+        }
+    }
+
+
+    // MARK: - Complete Measurement
+
+    private func completeMeasurement() {
+
+        AudioServicesPlaySystemSound(
+            kSystemSoundID_Vibrate
+        )
+
+        finalPPGWaveform =
+            ecgWave.points
+
+        camera.stopRecording()
+
+        ecgWave.stop()
+
+        isReading = false
+
+        readingComplete = true
+
+        secondsRemaining = 0
+
+        startTime = nil
+
+        showResults = true
+    }
+
+
+    // MARK: - Stop Early
+
+    private func stopMeasurementEarly() {
+
+        camera.stopRecording()
+
+        ecgWave.stop()
+
+        isReading = false
+
+        startTime = nil
+
+
+        if secondsRemaining
+            <= readTime / 2 {
+
+            finalPPGWaveform =
+                ecgWave.points
+
+            showIncomplete = true
+        }
+
+
+        secondsRemaining =
+            readTime
+    }
+
+
+    // MARK: - Reset
+
+    private func resetReading() {
+
+        camera.stopRecording()
+
+        ecgWave.stop()
+
+        isReading = false
+
+        readingComplete = false
+
+        startTime = nil
+
+        secondsRemaining =
+            readTime
+
+        bpmValuesThisReading = []
+
+        finalPPGWaveform = []
+
+        lastFingerDetectedTime = nil
     }
 }
-// The wave is drawn to match a BPM, it illustrates the rate.
+
+
+// MARK: - Waveform
+
 struct WaveformShape: Shape {
+
     let points: [Double]
 
-    func path(in rect: CGRect) -> Path {
+    func path(
+        in rect: CGRect
+    ) -> Path {
+
         var path = Path()
-        guard points.count > 1 else { return path }
 
-        let xSpacing = rect.width / CGFloat(points.count - 1)
-        let centerY = rect.midY
-        let heightScale = rect.height * 0.35
-        
+        guard points.count > 1 else {
+            return path
+        }
 
-        for (index, height) in points.enumerated() {
-            let x = CGFloat(index) * xSpacing
-            let y = centerY - CGFloat(height) * heightScale
+
+        let xSpacing =
+            rect.width
+            / CGFloat(
+                points.count - 1
+            )
+
+        let centerY =
+            rect.midY
+
+        let heightScale =
+            rect.height * 0.35
+
+
+        for (
+            index,
+            height
+        ) in points.enumerated() {
+
+            let x =
+                CGFloat(index)
+                * xSpacing
+
+            let y =
+                centerY
+                - CGFloat(height)
+                * heightScale
+
+
             if index == 0 {
-                path.move(to: CGPoint(x: x, y: y))
+
+                path.move(
+                    to:
+                        CGPoint(
+                            x: x,
+                            y: y
+                        )
+                )
+
             } else {
-                path.addLine(to: CGPoint(x: x, y: y))
+
+                path.addLine(
+                    to:
+                        CGPoint(
+                            x: x,
+                            y: y
+                        )
+                )
             }
         }
+
+
         return path
     }
 }
 
 
-//creates an ECG-style heartbeat animation.
-//the shape is illustrative, but its speed follows
-//the actual BPM calculated by PulseSignalProcessor.
+// MARK: - ECG Heartbeat Wave
 
-final class ECGHeartbeatWave: ObservableObject {
+final class ECGHeartbeatWave:
+    ObservableObject {
 
-    @Published var points: [Double] = Array(repeating: 0, count: 150)
+    @Published
+    var points: [Double] =
+        Array(
+            repeating: 0,
+            count: 150
+        )
 
     var beatsPerMinute: Double?
 
     private var phase = 0.0
     private var timer: Timer?
 
-    private let updatesPerSecond = 30.0
+    private let updatesPerSecond =
+        30.0
+
 
     func start() {
-        stop()
-        phase = 0
-        points = Array(repeating: 0, count: 150)
 
-        timer = Timer.scheduledTimer(
-            withTimeInterval: 1.0 / updatesPerSecond,
-            repeats: true
-        ) { [weak self] _ in
-            self?.addNextPoint()
-        }
+        stop()
+
+        phase = 0
+
+        points =
+            Array(
+                repeating: 0,
+                count: 150
+            )
+
+
+        timer =
+            Timer.scheduledTimer(
+                withTimeInterval:
+                    1.0
+                    / updatesPerSecond,
+                repeats: true
+            ) { [weak self] _ in
+
+                self?.addNextPoint()
+            }
     }
 
+
     func stop() {
+
         timer?.invalidate()
+
         timer = nil
     }
 
+
     private func addNextPoint() {
+
         var value = 0.0
 
-        if let bpm = beatsPerMinute,
+
+        if let bpm =
+            beatsPerMinute,
            bpm.isFinite,
            bpm > 0 {
 
-            //aave timing follows the actual estimated BPM from the pipeline
-            phase += (bpm / 60.0) / updatesPerSecond
-            phase.formTruncatingRemainder(dividingBy: 1.0)
+            phase +=
+                (bpm / 60.0)
+                / updatesPerSecond
+
+            phase.formTruncatingRemainder(
+                dividingBy: 1.0
+            )
+
 
             func peak(
                 _ center: Double,
                 _ width: Double,
                 _ height: Double
             ) -> Double {
-                let distance = (phase - center) / width
-                return height * exp(-0.5 * distance * distance)
+
+                let distance =
+                    (phase - center)
+                    / width
+
+                return height
+                    * exp(
+                        -0.5
+                        * distance
+                        * distance
+                    )
             }
 
-            //familiar ECG-style shape.
+
             value =
-                peak(0.18, 0.035, 0.12) -
-                peak(0.39, 0.012, 0.18) +
-                peak(0.42, 0.008, 1.0) -
-                peak(0.45, 0.012, 0.30) +
-                peak(0.68, 0.075, 0.23)
+
+                peak(
+                    0.18,
+                    0.035,
+                    0.12
+                )
+
+                - peak(
+                    0.39,
+                    0.012,
+                    0.18
+                )
+
+                + peak(
+                    0.42,
+                    0.008,
+                    1.0
+                )
+
+                - peak(
+                    0.45,
+                    0.012,
+                    0.30
+                )
+
+                + peak(
+                    0.68,
+                    0.075,
+                    0.23
+                )
         }
 
+
         points.append(value)
+
         points.removeFirst()
     }
 
+
     deinit {
+
         timer?.invalidate()
     }
 }
 
 
+// MARK: - Preview
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
+struct ReadingView_Previews:
+    PreviewProvider {
+
+    static var previews:
+        some View {
+
         NavigationStack {
-            ReadingView(
-                
-            )
+
+            ReadingView()
         }
     }
 }
