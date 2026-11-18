@@ -366,12 +366,11 @@ struct ReadingView: View {
         }
 
         .navigationDestination(
-            isPresented: $showResults
-        ) {
-
+            isPresented: $showResults) {
             ResultsView(
                 averageBPM: averageBPM,
-                confidencePCT: 99.9,
+                confidencePCT: camera.finalQualityPCT,
+                signalQualityLabel: camera.finalQualityLabel,
                 finalPPGWaveform: finalPPGWaveform
             )
         }
@@ -974,10 +973,10 @@ struct ReadingView: View {
 
             return
         }
-
-
-        let detected =
-            validMeasurementPosition
+        let detected = validMeasurementPosition
+        //finger coverage info to signal quality
+        camera.updateFingerCoverage(detected)
+        
 
 
         if detected {
@@ -1094,19 +1093,17 @@ struct ReadingView: View {
         finalPPGWaveform =
             ecgWave.points
 
-        camera.stopRecording()
-
         ecgWave.stop()
 
         isReading = false
-
         readingComplete = true
-
         secondsRemaining = 0
-
         startTime = nil
 
-        showResults = true
+        //calculate signal quality before opening Results
+        camera.finishRecording {
+            showResults = true
+        }
     }
 
 

@@ -1,5 +1,5 @@
 //
-//  CameraView.swift
+//  ResultsView.swift
 //  ID PPG
 //
 //  Created by Dylan Gonzalez on 29/9/2026.
@@ -7,30 +7,31 @@
 import SwiftUI
 
 struct ResultsView: View {
-
+    
     let averageBPM: Double?
     let confidencePCT: Double
+    let signalQualityLabel: String
     let finalPPGWaveform: [Double]
-
+    
     @AppStorage("patientAge")
     private var patientAge = 18.0
-
+    
     @State private var showSaveSheet = false
     @State private var showPastReadings = false
-
+    
     var body: some View {
-
+        
         VStack(spacing: 24) {
-
+            
             // MARK: - Result Header
-
+            
             VStack(spacing: 8) {
-
+                
                 Text("Heart Rate Result")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
-
+                
                 Text(rangeMessage(patientAge, averageBPM))
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(
@@ -40,18 +41,18 @@ struct ResultsView: View {
                         )
                     )
                     .multilineTextAlignment(.center)
-
+                
                 Text("Based on population averages")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 20)
-
-
+            
+            
             // MARK: - BPM
-
+            
             VStack(spacing: 6) {
-
+                
                 Text("AVERAGE HEART RATE")
                     .font(
                         .system(
@@ -61,12 +62,12 @@ struct ResultsView: View {
                     )
                     .tracking(2)
                     .foregroundStyle(.secondary)
-
+                
                 HStack(
                     alignment: .lastTextBaseline,
                     spacing: 8
                 ) {
-
+                    
                     Text(
                         averageBPM.map {
                             String(
@@ -90,7 +91,7 @@ struct ResultsView: View {
                             averageBPM
                         )
                     )
-
+                    
                     Text("BPM")
                         .font(.title2)
                         .fontWeight(.medium)
@@ -99,12 +100,12 @@ struct ResultsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-
-
+            
+            
             // MARK: - Waveform
-
+            
             VStack(spacing: 10) {
-
+                
                 Text("YOUR PULSE WAVEFORM")
                     .font(
                         .system(
@@ -114,9 +115,9 @@ struct ResultsView: View {
                     )
                     .tracking(2)
                     .foregroundStyle(.secondary)
-
+                
                 if finalPPGWaveform.count > 1 {
-
+                    
                     WaveformShape(
                         points: finalPPGWaveform
                     )
@@ -129,9 +130,9 @@ struct ResultsView: View {
                         )
                     )
                     .frame(height: 100)
-
+                    
                 } else {
-
+                    
                     Text("Waveform unavailable")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -142,7 +143,7 @@ struct ResultsView: View {
             .background(
                 Color(
                     uiColor:
-                        .secondarySystemBackground
+                            .secondarySystemBackground
                 )
             )
             .clipShape(
@@ -151,12 +152,12 @@ struct ResultsView: View {
                     style: .continuous
                 )
             )
-
-
+            
+            
             // MARK: - Confidence / Signal Quality
-
+            
             VStack(spacing: 4) {
-
+                
                 Text("SIGNAL QUALITY")
                     .font(
                         .system(
@@ -166,28 +167,46 @@ struct ResultsView: View {
                     )
                     .tracking(1.5)
                     .foregroundStyle(.secondary)
-
-                Text(
-                    "\(confidencePCT, specifier: "%.1f")%"
+                
+                Text("\(confidencePCT, specifier: "%.1f")%"
                 )
                 .font(.headline)
                 .foregroundStyle(.primary)
+                //signal quality addition
+                HStack(spacing: 6) {
+                    Image(systemName:
+                        signalQualityLabel == "Good Signal"
+                        ? "checkmark.circle.fill"
+                        : signalQualityLabel == "Moderate Signal"
+                        ? "exclamationmark.circle.fill"
+                        : "xmark.circle.fill"
+                    )
+
+                    Text(signalQualityLabel)
+                }
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(
+                    signalQualityLabel == "Good Signal" ? Color.green :
+                    signalQualityLabel == "Moderate Signal" ? Color.orange :
+                    Color.red
+                )
             }
-
-
+            
+            
             Spacer()
-
-
+            
+            
             // MARK: - Save
-
+            
             Button {
-
+                
                 showSaveSheet = true
-
+                
             } label: {
-
+                
                 HStack(spacing: 10) {
-
+                    
                     Image(
                         systemName:
                             "square.and.arrow.down"
@@ -198,7 +217,7 @@ struct ResultsView: View {
                             weight: .semibold
                         )
                     )
-
+                    
                     Text("Save My Reading")
                         .font(
                             .system(
@@ -225,19 +244,19 @@ struct ResultsView: View {
                 ? 0.5
                 : 1
             )
-
-
+            
+            
             // MARK: - Not My Reading
-
+            
             NavigationLink {
-
+                
                 HomeView()
                     .navigationBarBackButtonHidden()
-
+                
             } label: {
-
+                
                 HStack(spacing: 10) {
-
+                    
                     Image(
                         systemName:
                             "arrow.counterclockwise"
@@ -248,7 +267,7 @@ struct ResultsView: View {
                             weight: .medium
                         )
                     )
-
+                    
                     Text("Not My Reading")
                         .font(
                             .system(
@@ -276,25 +295,25 @@ struct ResultsView: View {
         .padding(.horizontal, 20)
         .padding(.top, 20)
         .padding(.bottom, 30)
-
+        
         .navigationTitle("Results")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-
+        
         .toolbar {
-
+            
             ToolbarItem(
                 placement:
-                    .navigationBarLeading
+                        .navigationBarLeading
             ) {
-
+                
                 NavigationLink {
-
+                    
                     HomeView()
                         .navigationBarBackButtonHidden()
-
+                    
                 } label: {
-
+                    
                     Image(
                         systemName:
                             "chevron.left"
@@ -302,13 +321,13 @@ struct ResultsView: View {
                 }
             }
         }
-
+        
         .sheet(
             isPresented: $showSaveSheet
         ) {
-
+            
             if let bpm = averageBPM {
-
+                
                 SaveReadingSheet(
                     bpm: bpm
                 ) { activity, date in
@@ -322,180 +341,182 @@ struct ResultsView: View {
                         date:
                             date
                     )
-
+                    
                     showSaveSheet = false
                     showPastReadings = true
                 }
             }
         }
-
+        
         .navigationDestination(
             isPresented:
                 $showPastReadings
         ) {
-
+            
             PastReadingsView()
         }
     }
-
-
+    
+    
     // MARK: - Range Message
-
+    
     private func rangeMessage(
         _ patientAge: Double,
         _ averageBPM: Double?
     ) -> String {
-
+        
         guard
             let averageBPM,
             averageBPM.isFinite
         else {
-
+            
             return
-                "No heart rate reading available"
+            "No heart rate reading available"
         }
-
+        
         let range =
-            heartRange(
-                age: Int(patientAge)
-            )
-
+        heartRange(
+            age: Int(patientAge)
+        )
+        
         let bpm =
-            Int(
-                averageBPM.rounded()
-            )
-
+        Int(
+            averageBPM.rounded()
+        )
+        
         if range.contains(bpm) {
-
+            
             return
-                "Within the resting range for your age."
-
+            "Within the resting range for your age."
+            
         } else if bpm <
                     range.lowerBound {
-
+            
             return
-                "Below the resting range for your age."
-
+            "Below the resting range for your age."
+            
         } else {
-
+            
             return
-                "Above the resting range for your age."
+            "Above the resting range for your age."
         }
     }
-
-
+    
+    
     // MARK: - Range Color
-
+    
     private func rangeColor(
         _ patientAge: Double,
         _ averageBPM: Double?
     ) -> Color {
-
+        
         guard
             let averageBPM,
             averageBPM.isFinite
         else {
-
+            
             return .primary
         }
-
+        
         let range =
-            heartRange(
-                age: Int(patientAge)
-            )
-
+        heartRange(
+            age: Int(patientAge)
+        )
+        
         let bpm =
-            Int(
-                averageBPM.rounded()
-            )
-
+        Int(
+            averageBPM.rounded()
+        )
+        
         if range.contains(bpm) {
-
+            
             return .green
-
+            
         } else if bpm <
                     range.lowerBound {
-
+            
             return .blue
-
+            
         } else {
-
+            
             return .red
         }
     }
-
-
+    
+    
     // MARK: - Heart Rate Range
-
+    
     private func heartRange(
         age: Int
     ) -> ClosedRange<Int> {
-
+        
         let minimum: Int
-
+        
         switch age {
-
+            
         case 0:
             minimum = 80
-
+            
         case 1...2:
             minimum = 80
-
+            
         case 3...5:
             minimum = 80
-
+            
         case 6...12:
             minimum = 70
-
+            
         default:
             minimum = 60
         }
-
+        
         let maximum: Int
-
+        
         if age >= 13 {
             maximum = Int(
                 (208.0 - (0.7 * Double(age))).rounded()
             )
         } else {
-
+            
             switch age {
-
+                
             case 0:
                 maximum = 160
-
+                
             case 1...2:
                 maximum = 130
-
+                
             case 3...5:
                 maximum = 110
-
+                
             case 6...12:
                 maximum = 100
-
+                
             default:
                 maximum = 100
             }
         }
-
+        
         return minimum...maximum
     }
-
-
-// MARK: - Preview
-
-struct ResultsView_Previews:
-    PreviewProvider {
-
-    static var previews: some View {
-
-        NavigationStack {
-
-            ResultsView(
-                averageBPM: 72,
-                confidencePCT: 99.9,
-                finalPPGWaveform: []
-            )
+    
+    
+    // MARK: - Preview
+    
+    struct ResultsView_Previews:
+        PreviewProvider {
+        
+        static var previews: some View {
+            
+            NavigationStack {
+                
+                ResultsView(
+                    averageBPM: 72,
+                    confidencePCT: 85,
+                    signalQualityLabel: "Good Signal",
+                    finalPPGWaveform: []
+                )
+            }
         }
     }
 }

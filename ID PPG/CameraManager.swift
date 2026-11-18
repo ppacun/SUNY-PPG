@@ -37,12 +37,20 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     // Track B: Pulse signal processing
     @Published var estimatedBPM: Double?
     @Published var signalScore: Double = 0
+    @Published var finalQualityPCT: Double = 0
+    @Published var finalQualityLabel: String = "Poor Signal"
+    private var fingerCovered = false //this is for the signal quality, to make sure the finge ris positioned correctly during reading
     @Published var filteredWaves: [Double] = []
 
     private let pulseProcessor = PulseSignalProcessor()
     private let bpmStabilizer = BPMStabilizer()
     private let beatDetector = PPGBeatDetector()
+    
+    private let signalQualityAnalyzer = SignalQualityAnalyzer()
+    
     @Published var latestDetectedBeatTime: TimeInterval?
+    private var previousBeatTime : TimeInterval?
+    private var latestBPMforQuality: Double?
     private var pulseSamples: [PPGSample] = []
     private var frameCounter = 0
     private var waveFrameCounter = 0 //to prevent laggy waveform
@@ -104,6 +112,18 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
                         value: value,
                         time: sampleTime
                     ) {
+                        //check the time between detected pulse peaks
+                        if let previous = previousBeatTime {
+                            let interval = detectedTime - previous
+
+                            //send beat interval to Signal Quality during recording
+                            if isRecording, let bpm = latestBPMforQuality {
+                                signalQualityAnalyzer.addBeatInterval(interval, bpm: bpm)
+                            }
+                        }
+
+                        previousBeatTime = detectedTime
+                        
                         DispatchQueue.main.async {
                             self.latestDetectedBeatTime = detectedTime
                         }
@@ -143,7 +163,17 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         let stableBPM = result.flatMap {
             bpmStabilizer.stabilize($0.bpm)
         }
-
+        //store bpm for beat consistency
+        latestBPMforQuality = stableBPM
+        //sending fft and bpm calculaytion to signalquality analyzer
+        if isRecording, let result = result, let bpm = stableBPM {
+            signalQualityAnalyzer.add(
+                fftScore: result.signalScore,
+                bpm: bpm,
+                fingerCovered: fingerCovered,
+                timestamp: timestamp
+            )
+        }
         DispatchQueue.main.async {
             self.estimatedBPM = stableBPM
             self.signalScore = result?.signalScore ?? 0
@@ -182,11 +212,24 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             print("Could not write CSV:", error)
         }
     }
+    //finger coverage info from readingview for the signal quality check
+    func updateFingerCoverage(_ covered: Bool) {
+        cameraQueue.async {
+            self.fingerCovered = covered
+            if self.isRecording {
+                self.signalQualityAnalyzer.addFingerCoverage(covered)
+            }
+        }
+    }
+    
     func startRecording() {
         cameraQueue.async {
             self.pulseSamples.removeAll()
             self.bpmStabilizer.reset()
             self.beatDetector.reset()
+            self.previousBeatTime = nil
+            self.latestBPMforQuality = nil
+            self.signalQualityAnalyzer.reset()
 
             self.frameCounter = 0
             self.waveFrameCounter = 0
@@ -198,6 +241,8 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
                 self.signalScore = 0
                 self.filteredWaves = []
                 self.latestDetectedBeatTime = nil
+                self.finalQualityPCT = 0
+                self.finalQualityLabel = "Poor Signal"
             }
         }
         let documents = FileManager.default.urls(
@@ -261,6 +306,21 @@ class CameraManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
             print(url)
         }
     }
+    //to get the final signal quality after the reading ends
+    func finishRecording(completion: @escaping () -> Void) {
+        cameraQueue.async {
+            self.isRecording = false
+
+            let quality = self.signalQualityAnalyzer.finalQuality()
+
+            DispatchQueue.main.async {
+                self.finalQualityPCT = quality.percent
+                self.finalQualityLabel = quality.label
+                completion()
+            }
+        }
+    }
+    
     private func setupCamera() {
         session.beginConfiguration()
         session.sessionPreset = .low
