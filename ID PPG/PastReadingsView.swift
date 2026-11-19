@@ -4,7 +4,9 @@
 //
 //  Created by Mamadou Wague on 10/29/2026
 //
+
 import SwiftUI
+import Charts
 
 enum ReadingActivity: String, CaseIterable, Codable {
     case none = "None"
@@ -140,11 +142,23 @@ struct PastReadingsView: View {
     @ObservedObject private var store = ReadingStore.shared
     @AppStorage("patientAge") private var patientAge = 18.0
     @State private var confirmDeleteAll = false
+    @State private var selectedReadingID: UUID?
 
     var body: some View {
         VStack(spacing: 0) {
             summaryHeader
                 .padding()
+
+            // Graph of the most recent readings (hidden until something is saved)
+            if !store.readings.isEmpty {
+                ReadingsGraph(
+                    readings: store.readings,
+                    age: patientAge,
+                    selectedID: $selectedReadingID
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
 
             Divider()
 
@@ -167,6 +181,13 @@ struct PastReadingsView: View {
                 }
                 .listStyle(.plain)
             }
+        }
+        // Clear the graph selection if a reading is added or deleted, or when leaving the screen
+        .onChange(of: store.readings.count) { _ in
+            selectedReadingID = nil
+        }
+        .onDisappear {
+            selectedReadingID = nil
         }
         .navigationTitle("Past Readings")
         .navigationBarTitleDisplayMode(.inline)
@@ -326,6 +347,258 @@ struct SaveReadingSheet: View {
     }
 }
 
+// One plotted reading. `index` is its slot on the x-axis (0 = oldest shown).
+private struct GraphPoint: Identifiable {
+    let index: Int
+    let reading: SavedReading
+    let status: RangeStatus
+
+    var id: UUID { reading.id }
+}
+
+// Line graph of the newest readings, oldest on the left.
+private struct ReadingsGraph: View {
+    let readings: [SavedReading]      // newest first, same order as the store
+    let age: Double
+    @Binding var selectedID: UUID?
+    
+    @State private var isTouching = false
+    @State private var movedFar = false
+    @State private var selectionAtTouchStart: UUID?
+    
+    private let maxPoints = 30
+    
+    // Newest 30 readings, reversed so the oldest is on the left.
+    private var points: [GraphPoint] {
+        let recent = Array(readings.prefix(maxPoints).reversed())
+        return recent.enumerated().map { offset, reading in
+            GraphPoint(
+                index: offset,
+                reading: reading,
+                status: RangeStatus(bpm: reading.bpm, age: age)
+            )
+        }
+    }
+ 
+    // Y-axis follows the data with padding, in steps of 10.
+    private func yDomain(for points: [GraphPoint]) -> ClosedRange<Double> {
+        let values = points.map { $0.reading.bpm }
+
+        guard let low = values.min(),
+              let high = values.max() else {
+            return 50...90
+        }
+
+        if high - low < 10 {
+            let start = (((low + high) / 2 - 10) / 10).rounded(.down) * 10
+            return start...(start + 20)
+        }
+
+        let padding = max(5.0, (high - low) * 0.15)
+        let lower = ((low - padding) / 10).rounded(.down) * 10
+        let upper = ((high + padding) / 10).rounded(.up) * 10
+        return lower...upper
+    }
+
+    var body: some View {
+        let pts = points
+        let domain = yDomain(for: pts)
+        let middle = (domain.lowerBound + domain.upperBound) / 2
+        let ticks = [domain.lowerBound, middle, domain.upperBound]
+        let selected = pts.first { $0.id == selectedID }
+        let dotSize: CGFloat = pts.count > 12 ? 22 : 40
+
+        VStack(spacing: 4) {
+
+            Chart {
+
+                // Selection marker: dashed guide, halo, and the readout label.
+                if let sel = selected {
+
+                    RuleMark(x: .value("Reading", Double(sel.index)))
+                        .foregroundStyle(Color.secondary.opacity(0.6))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+
+                    PointMark(
+                        x: .value("Reading", Double(sel.index)),
+                        y: .value("BPM", sel.reading.bpm)
+                    )
+                    .symbolSize(450)
+                    .foregroundStyle(sel.status.color.opacity(0.22))
+                    .annotation(
+                        position: sel.reading.bpm > middle ? .bottom : .top,
+                        alignment: .center,
+                        spacing: 6
+                    ) {
+                        readoutLabel(for: sel)
+                    }
+                }
+
+                ForEach(pts) { point in
+                    LineMark(
+                        x: .value("Reading", Double(point.index)),
+                        y: .value("BPM", point.reading.bpm)
+                    )
+                    .foregroundStyle(Color.primary)
+                    .lineStyle(
+                        StrokeStyle(
+                            lineWidth: 2.5,
+                            lineCap: .round,
+                            lineJoin: .round
+                        )
+                    )
+                }
+
+                ForEach(pts) { point in
+                    PointMark(
+                        x: .value("Reading", Double(point.index)),
+                        y: .value("BPM", point.reading.bpm)
+                    )
+                    .symbolSize(point.id == selected?.id ? 110 : dotSize)
+                    .foregroundStyle(point.status.color)
+                }
+            }
+            .chartYScale(domain: domain)
+            .chartXScale(domain: -0.5...(Double(pts.count) - 0.5))
+            .chartXAxis(.hidden)
+            .chartLegend(.hidden)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: ticks) { _ in
+                    AxisGridLine()
+                    AxisValueLabel()
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    let plotFrame = geo[proxy.plotAreaFrame]
+
+                    ZStack {
+                        // The chart's two dark side borders
+                        Path { path in
+                            path.move(to: CGPoint(x: plotFrame.minX, y: plotFrame.minY - 6))
+                            path.addLine(to: CGPoint(x: plotFrame.minX, y: plotFrame.maxY + 6))
+                            path.move(to: CGPoint(x: plotFrame.maxX, y: plotFrame.minY - 6))
+                            path.addLine(to: CGPoint(x: plotFrame.maxX, y: plotFrame.maxY + 6))
+                        }
+                        .stroke(
+                            Color.primary,
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                        )
+                        .allowsHitTesting(false)
+
+                        // Touch layer over the whole chart
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .gesture(
+                                touchGesture(plotFrame: plotFrame, points: pts)
+                            )
+                    }
+                }
+            }
+            .frame(height: 150)
+            .accessibilityLabel(
+                "Graph of your \(pts.count) most recent heart rate readings"
+            )
+
+            Text(readings.count > maxPoints ? "Last \(maxPoints) readings" : "All time")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // Label shown next to the selected dot.
+    private func readoutLabel(for point: GraphPoint) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(Int(point.reading.bpm.rounded())) BPM · \(point.status.label)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(point.status.color)
+
+            Text(
+                point.reading.date.formatted(date: .abbreviated, time: .shortened)
+                + " · " + point.reading.activity.rawValue
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.secondary.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    // Touch down or slide: select the nearest dot.
+    private func touchGesture(plotFrame: CGRect, points: [GraphPoint]) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                if !isTouching {
+                    isTouching = true
+                    movedFar = false
+                    selectionAtTouchStart = selectedID
+                }
+
+                if abs(value.translation.width) > 10 ||
+                    abs(value.translation.height) > 10 {
+                    movedFar = true
+                }
+
+                if let point = nearestPoint(
+                    to: value.location,
+                    plotFrame: plotFrame,
+                    points: points
+                ) {
+                    selectedID = point.id
+                }
+            }
+            .onEnded { value in
+                if !movedFar,
+                   let startID = selectionAtTouchStart,
+                   let point = nearestPoint(
+                       to: value.location,
+                       plotFrame: plotFrame,
+                       points: points
+                   ),
+                   point.id == startID {
+                    selectedID = nil
+                }
+
+                isTouching = false
+                selectionAtTouchStart = nil
+            }
+    }
+
+    // Each reading owns one equal-width slot across the plot area.
+    private func nearestPoint(
+        to location: CGPoint,
+        plotFrame: CGRect,
+        points: [GraphPoint]
+    ) -> GraphPoint? {
+        guard !points.isEmpty,
+              plotFrame.width > 0 else {
+            return nil
+        }
+
+        let fraction = min(
+            max((location.x - plotFrame.minX) / plotFrame.width, 0),
+            1
+        )
+
+        let index = min(
+            Int(fraction * Double(points.count)),
+            points.count - 1
+        )
+
+        return points[index]
+    }
+}
+
 struct PastReadingsView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
@@ -388,4 +661,5 @@ private func heartRange(
 
     return minimum...maximum
 }
+
 
